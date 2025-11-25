@@ -2,21 +2,18 @@
 Users service application entrypoint.
 
 This module exposes the FastAPI application instance for the Users service.
-Other parts of the system (e.g., the ASGI server, Docker) will import the
-``app`` object from here in order to run the service.
 """
 
 from fastapi import FastAPI
 
-from .routers import auth_routes, users_routes, admin_routes
+from services.users.app.routers import auth_routes, users_routes, admin_routes
 
 
 app = FastAPI(
     title="Users Service",
     description=(
         "Microservice responsible for user registration, authentication, "
-        "profile management, roles, and exposing booking history via "
-        "inter-service communication with the Bookings service."
+        "profile management, roles, and exposing booking history."
     ),
     version="0.1.0",
 )

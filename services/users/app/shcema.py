@@ -18,20 +18,14 @@ class UserBase(BaseModel):
 
     username: str = Field(..., description="Unique username of the user.")
     email: EmailStr = Field(..., description="Unique email address of the user.")
-    role: str = Field(
-        ...,
-        description=(
-            "Role of the user in the system (e.g., 'admin', 'regular', "
-            "'facility_manager', 'moderator', 'auditor', 'service_account')."
-        ),
-    )
 
 
 class UserCreate(UserBase):
     """
     Schema used when registering a new user.
 
-    It extends :class:`UserBase` with a plaintext password field.
+    In this design, new users are always created with the ``'regular'`` role.
+    Role changes are handled by administrator endpoints.
     """
 
     password: str = Field(..., min_length=6, description="Plaintext password.")
@@ -60,6 +54,7 @@ class UserRead(UserBase):
     """
 
     id: int = Field(..., description="Database identifier of the user.")
+    role: str = Field(..., description="Role of the user.")
     created_at: datetime = Field(..., description="Timestamp when the user was created.")
 
     class Config:
@@ -82,3 +77,12 @@ class TokenResponse(BaseModel):
         default="bearer",
         description="Authentication scheme of the token (usually 'bearer').",
     )
+
+
+class UserLogin(BaseModel):
+    """
+    Request schema used when a user attempts to log in.
+    """
+
+    username: str = Field(..., description="Username used to authenticate.")
+    password: str = Field(..., description="Plaintext password used to authenticate.")

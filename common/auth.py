@@ -11,9 +11,16 @@ The functions are intentionally left as stubs in the first commit and will
 be fully implemented in later commits when the Users service is developed.
 """
 
-from datetime import timedelta
-from typing import Optional
+from datetime import datetime, timedelta
+from typing import Optional, Dict, Any
 
+
+from jose import JWTError, jwt
+from passlib.context import CryptContext
+
+from common.config import get_settings
+
+_pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 def create_access_token(*, subject: str, role: str, expires_delta: Optional[timedelta] = None) -> str:
     """
@@ -39,7 +46,19 @@ def create_access_token(*, subject: str, role: str, expires_delta: Optional[time
     added in a later commit once configuration and the Users service are in place.
     """
     
-    raise NotImplementedError("create_access_token is not implemented yet.")
+    settings = get_settings()
+    if expires_delta is None:
+        expires_delta = timedelta(minutes=settings.jwt_access_token_expire_minutes)
+
+    expire = datetime.utcnow() + expires_delta
+    to_encode: Dict[str, Any] = {"sub": str(subject), "role": role, "exp": expire}
+
+    encoded_jwt = jwt.encode(
+        to_encode,
+        settings.jwt_secret_key,
+        algorithm=settings.jwt_algorithm,
+    )
+    return encoded_jwt
 
 
 def verify_access_token(token: str) -> dict:
@@ -67,7 +86,16 @@ def verify_access_token(token: str) -> dict:
     handling strategy) will be implemented in a later commit.
     """
     
-    raise NotImplementedError("verify_access_token is not implemented yet.")
+    settings = get_settings()
+    try:
+        payload = jwt.decode(
+            token,
+            settings.jwt_secret_key,
+            algorithms=[settings.jwt_algorithm],
+        )
+        return payload
+    except JWTError as exc:  # pragma: no cover - defensive
+        raise RuntimeError("Invalid or expired token") from exc
 
 
 def get_password_hash(plain_password: str) -> str:
@@ -90,7 +118,7 @@ def get_password_hash(plain_password: str) -> str:
     in a later commit.
     """
     
-    raise NotImplementedError("get_password_hash is not implemented yet.")
+    return _pwd_context.hash(plain_password)
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -110,4 +138,4 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
         ``True`` if the password matches the hash, otherwise ``False``.
     """
     
-    raise NotImplementedError("verify_password is not implemented yet.")
+    return _pwd_context.verify(plain_password, hashed_password)
