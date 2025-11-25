@@ -13,6 +13,10 @@
   {
     "key": "rooms_base_url",
     "value": "http://localhost:8002"
+  },
+  {
+    "key": "bookings_base_url",
+    "value": "http://localhost:8003"
   }
   ],
   "item": [
@@ -419,6 +423,213 @@
           "response": []
         }
       ]
-    }
+    },
+      {
+    "name": "Bookings",
+    "item": [
+      {
+        "name": "Get my bookings",
+        "request": {
+          "method": "GET",
+          "header": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{access_token}}",
+              "description": "JWT for a regular user."
+            }
+          ],
+          "url": {
+            "raw": "{{bookings_base_url}}/bookings/my",
+            "host": [
+              "{{bookings_base_url}}"
+            ],
+            "path": [
+              "bookings",
+              "my"
+            ]
+          },
+          "description": "Return all bookings that belong to the currently authenticated user."
+        },
+        "response": []
+      },
+      {
+        "name": "Create booking",
+        "request": {
+          "method": "POST",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Authorization",
+              "value": "Bearer {{access_token}}",
+              "description": "JWT for a regular user."
+            }
+          ],
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"room_id\": 1,\n  \"start_time\": \"2025-01-01T10:00:00\",\n  \"end_time\": \"2025-01-01T11:00:00\",\n  \"title\": \"Team sync\"\n}"
+          },
+          "url": {
+            "raw": "{{bookings_base_url}}/bookings",
+            "host": [
+              "{{bookings_base_url}}"
+            ],
+            "path": [
+              "bookings"
+            ]
+          },
+          "description": "Create a new booking for a room and time window. Fails with 409 if there is a conflicting confirmed booking."
+        },
+        "response": []
+      },
+      {
+        "name": "Update my booking",
+        "request": {
+          "method": "PUT",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Authorization",
+              "value": "Bearer {{access_token}}"
+            }
+          ],
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"start_time\": \"2025-01-01T11:00:00\",\n  \"end_time\": \"2025-01-01T12:00:00\",\n  \"room_id\": 1\n}"
+          },
+          "url": {
+            "raw": "{{bookings_base_url}}/bookings/{{booking_id}}",
+            "host": [
+              "{{bookings_base_url}}"
+            ],
+            "path": [
+              "bookings",
+              "{{booking_id}}"
+            ]
+          },
+          "description": "Update an existing booking owned by the current user. Server returns 403 if the booking belongs to someone else."
+        },
+        "response": []
+      },
+      {
+        "name": "Cancel my booking",
+        "request": {
+          "method": "POST",
+          "header": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{access_token}}"
+            }
+          ],
+          "url": {
+            "raw": "{{bookings_base_url}}/bookings/{{booking_id}}/cancel",
+            "host": [
+              "{{bookings_base_url}}"
+            ],
+            "path": [
+              "bookings",
+              "{{booking_id}}",
+              "cancel"
+            ]
+          },
+          "description": "Cancel a booking owned by the current user. Marks the booking as cancelled but keeps it in history."
+        },
+        "response": []
+      },
+      {
+        "name": "Get all bookings (admin/facility/auditor)",
+        "request": {
+          "method": "GET",
+          "header": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{admin_token}}",
+              "description": "Token for an admin, facility manager, or auditor."
+            }
+          ],
+          "url": {
+            "raw": "{{bookings_base_url}}/bookings",
+            "host": [
+              "{{bookings_base_url}}"
+            ],
+            "path": [
+              "bookings"
+            ]
+          },
+          "description": "List all bookings in the system. Restricted to admin/facility_manager/auditor roles."
+        },
+        "response": []
+      },
+      {
+        "name": "Force-cancel booking (admin only)",
+        "request": {
+          "method": "POST",
+          "header": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{admin_token}}"
+            }
+          ],
+          "url": {
+            "raw": "{{bookings_base_url}}/bookings/{{booking_id}}/force-cancel",
+            "host": [
+              "{{bookings_base_url}}"
+            ],
+            "path": [
+              "bookings",
+              "{{booking_id}}",
+              "force-cancel"
+            ]
+          },
+          "description": "Admin-only operation that force-cancels a booking even if it conflicts with others."
+        },
+        "response": []
+      },
+      {
+        "name": "Check availability",
+        "request": {
+          "method": "GET",
+          "header": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{access_token}}"
+            }
+          ],
+          "url": {
+            "raw": "{{bookings_base_url}}/bookings/check-availability?room_id=1&start_time=2025-01-01T10:00:00&end_time=2025-01-01T11:00:00",
+            "host": [
+              "{{bookings_base_url}}"
+            ],
+            "path": [
+              "bookings",
+              "check-availability"
+            ],
+            "query": [
+              {
+                "key": "room_id",
+                "value": "1"
+              },
+              {
+                "key": "start_time",
+                "value": "2025-01-01T10:00:00"
+              },
+              {
+                "key": "end_time",
+                "value": "2025-01-01T11:00:00"
+              }
+            ]
+          },
+          "description": "Check whether a room is free in the given time window. Implementation will return a boolean flag and, optionally, conflicting bookings."
+        },
+        "response": []
+      }
+    ]
+  }
+
   ]
 }
