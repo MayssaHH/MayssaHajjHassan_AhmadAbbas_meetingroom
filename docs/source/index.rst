@@ -10,7 +10,7 @@ page and a placeholder for the Users service.
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
 
    architecture
    users_service
+   rooms_service
