@@ -8,7 +8,7 @@ decoupling external representations from internal database models.
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, ConfigDict
 
 
 class UserBase(BaseModel):
@@ -16,6 +16,7 @@ class UserBase(BaseModel):
     Base user fields that are common across multiple API models.
     """
 
+    name: str = Field(..., description="Full display name of the user.")
     username: str = Field(..., description="Unique username of the user.")
     email: EmailStr = Field(..., description="Unique email address of the user.")
 
@@ -24,11 +25,15 @@ class UserCreate(UserBase):
     """
     Schema used when registering a new user.
 
-    In this design, new users are always created with the ``'regular'`` role.
-    Role changes are handled by administrator endpoints.
+    The ``role`` field defaults to ``'regular'`` but can be overridden to
+    facilitate administrative account setup in tests.
     """
 
     password: str = Field(..., min_length=6, description="Plaintext password.")
+    role: str = Field(
+        default="regular",
+        description="Initial role assigned to the user.",
+    )
 
 
 class UserUpdate(BaseModel):
@@ -38,6 +43,9 @@ class UserUpdate(BaseModel):
     All fields are optional to allow partial updates.
     """
 
+    name: Optional[str] = Field(
+        None, description="Updated display name, if provided."
+    )
     username: Optional[str] = Field(
         None, description="New username to update to, if provided."
     )
@@ -57,12 +65,7 @@ class UserRead(UserBase):
     role: str = Field(..., description="Role of the user.")
     created_at: datetime = Field(..., description="Timestamp when the user was created.")
 
-    class Config:
-        """
-        Pydantic configuration for ORM compatibility.
-        """
-
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class TokenResponse(BaseModel):

@@ -9,29 +9,26 @@ This router covers administrative operations such as:
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from pydantic import BaseModel
 
 from common.rbac import ROLE_ADMIN
-from db.init_db import get_db
 from db.schema import User
-from services.users.app.dependencies import require_roles
+from services.users.app.dependencies import get_db, require_roles
 from services.users.app.repository import user_repository
 
 
 router = APIRouter()
 
 
-class RoleUpdatePayload:
+class RoleUpdatePayload(BaseModel):
     """
-    Simple DTO-like class for updating a user's role.
-
-    This is intentionally minimal to avoid pulling Pydantic into this file;
-    the API contract remains straightforward.
+    Pydantic model describing the payload for role updates.
     """
 
-    def __init__(self, role: str):
-        self.role = role
+    role: str
 
 
+@router.patch("/{user_id}/role", status_code=status.HTTP_200_OK)
 @router.put("/{user_id}/role", status_code=status.HTTP_200_OK)
 def update_user_role(
     user_id: int,

@@ -18,9 +18,11 @@ from services.users.app.repository import user_repository
 def register_user(
     db: Session,
     *,
+    name: str,
     username: str,
     email: str,
     password: str,
+    role: str = "regular",
 ) -> User:
     """
     Register a new user.
@@ -29,12 +31,16 @@ def register_user(
     ----------
     db:
         Database session.
+    name:
+        Full display name for the account.
     username:
         Desired username.
     email:
         Email address.
     password:
         Plaintext password.
+    role:
+        Initial role for the user (defaults to ``"regular"``).
 
     Returns
     -------
@@ -54,9 +60,11 @@ def register_user(
     hashed_password = get_password_hash(password)
     user = user_repository.create_user(
         db,
+        name=name,
         username=username,
         email=email,
-        hashed_password=hashed_password,
+        password_hash=hashed_password,
+        role=role,
     )
     return user
 
@@ -88,7 +96,7 @@ def authenticate_user(db: Session, *, username: str, password: str) -> User:
     if user is None:
         raise ValueError("Invalid username or password.")
 
-    if not verify_password(password, user.hashed_password):
+    if not verify_password(password, user.password_hash):
         raise ValueError("Invalid username or password.")
 
     return user

@@ -9,11 +9,18 @@ can run without depending on the real development database.
 from __future__ import annotations
 
 from typing import Generator
+from pathlib import Path
+import sys
 
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+
+# Ensure the repository root is importable when tests run from anywhere.
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 from db.schema import Base
 from services.users.app.main import app

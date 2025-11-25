@@ -2,8 +2,9 @@ version: "3.9"
 
 services:
   db:
-    image: postgres:16
-    restart: unless-stopped
+    image: postgres:15
+    container_name: smart_meeting_room_db
+    restart: always
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -11,7 +12,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - db_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
 
 volumes:
-  db_data:
+  postgres_data:

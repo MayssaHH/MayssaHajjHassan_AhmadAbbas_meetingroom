@@ -12,7 +12,15 @@ from sqlalchemy.orm import Session
 from db.schema import User
 
 
-def create_user(db_session: Session, *, username: str, email: str, hashed_password: str) -> User:
+def create_user(
+    db_session: Session,
+    *,
+    name: str,
+    username: str,
+    email: str,
+    password_hash: str,
+    role: str,
+) -> User:
     """
     Persist a new user record in the database.
 
@@ -20,12 +28,16 @@ def create_user(db_session: Session, *, username: str, email: str, hashed_passwo
     ----------
     db_session:
         An active database session.
+    name:
+        Full display name of the new user.
     username:
         The unique username of the new user.
     email:
         The unique email address of the new user.
-    hashed_password:
+    password_hash:
         The already-hashed password for the new user.
+    role:
+        Initial role assigned to the user.
 
     Returns
     -------
@@ -33,10 +45,11 @@ def create_user(db_session: Session, *, username: str, email: str, hashed_passwo
         The newly created :class:`User` instance.
     """
     user = User(
+        name=name,
         username=username,
         email=email,
-        hashed_password=hashed_password,
-        role="regular",
+        password_hash=password_hash,
+        role=role,
     )
     db_session.add(user)
     db_session.commit()
