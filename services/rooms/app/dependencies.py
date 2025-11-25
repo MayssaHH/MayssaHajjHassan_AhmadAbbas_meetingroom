@@ -19,7 +19,7 @@ from pydantic import BaseModel
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
-from common.auth import decode_access_token
+from common.auth import verify_access_token
 from common.config import get_settings
 from common.rbac import ROLE_ADMIN, ROLE_FACILITY_MANAGER, has_role
 
@@ -67,12 +67,15 @@ def get_current_user(
     """
     Decode the JWT token and return the current user.
 
-    Raises :class:`fastapi.HTTPException` if the token is invalid or
-    contains insufficient information.
+    Raises
+    ------
+    HTTPException
+        If the token is invalid or missing required claims.
     """
     token = credentials.credentials
+
     try:
-        payload = decode_access_token(token)
+        payload = verify_access_token(token)
     except Exception:  # noqa: BLE001
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -80,6 +83,8 @@ def get_current_user(
         )
 
     user_id = payload.get("sub")
+    # Our Users JWT currently sets only "sub" and "role".
+    # "username" may be missing, so we default to empty string.
     username = payload.get("username", "")
     role = payload.get("role")
 
