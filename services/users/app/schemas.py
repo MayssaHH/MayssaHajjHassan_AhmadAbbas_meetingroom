@@ -6,9 +6,19 @@ decoupling external representations from internal database models.
 """
 
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Literal
 
 from pydantic import BaseModel, EmailStr, Field, ConfigDict
+
+RoleLiteral = Literal[
+    "admin",
+    "regular",
+    "facility",
+    "facility_manager",
+    "moderator",
+    "auditor",
+    "service_account",
+]
 
 
 class UserBase(BaseModel):
@@ -30,7 +40,7 @@ class UserCreate(UserBase):
     """
 
     password: str = Field(..., min_length=6, description="Plaintext password.")
-    role: str = Field(
+    role: RoleLiteral = Field(
         default="regular",
         description="Initial role assigned to the user.",
     )
@@ -62,7 +72,7 @@ class UserRead(UserBase):
     """
 
     id: int = Field(..., description="Database identifier of the user.")
-    role: str = Field(..., description="Role of the user.")
+    role: RoleLiteral = Field(..., description="Role of the user.")
     created_at: datetime = Field(..., description="Timestamp when the user was created.")
 
     model_config = ConfigDict(from_attributes=True)

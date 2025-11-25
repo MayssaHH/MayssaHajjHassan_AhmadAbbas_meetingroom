@@ -11,8 +11,41 @@ from typing import List
 from sqlalchemy.orm import Session
 
 from common.auth import get_password_hash, verify_password, create_access_token
+from common.rbac import (
+    ROLE_ADMIN,
+    ROLE_REGULAR,
+    ROLE_FACILITY_MANAGER,
+    ROLE_MODERATOR,
+    ROLE_AUDITOR,
+    ROLE_SERVICE_ACCOUNT,
+)
 from db.schema import User
 from services.users.app.repository import user_repository
+
+ALLOWED_ROLES = {
+    ROLE_ADMIN,
+    ROLE_REGULAR,
+    ROLE_FACILITY_MANAGER,
+    ROLE_MODERATOR,
+    ROLE_AUDITOR,
+    ROLE_SERVICE_ACCOUNT,
+}
+
+ROLE_ALIASES = {
+    "facility": ROLE_FACILITY_MANAGER,
+}
+
+
+def normalize_role(role: str) -> str:
+    """
+    Validate and normalize an incoming role string.
+    """
+    normalized = ROLE_ALIASES.get(role, role)
+    if normalized not in ALLOWED_ROLES:
+        raise ValueError(
+            "Invalid role. Allowed roles are: admin, regular, facility, moderator, auditor, service_account."
+        )
+    return normalized
 
 
 def register_user(
@@ -52,6 +85,8 @@ def register_user(
     ValueError
         If the username or email is already taken.
     """
+    normalized_role = normalize_role(role)
+
     if user_repository.get_user_by_username(db, username=username):
         raise ValueError("Username is already taken.")
     if user_repository.get_user_by_email(db, email=email):
@@ -64,7 +99,7 @@ def register_user(
         username=username,
         email=email,
         password_hash=hashed_password,
-        role=role,
+        role=normalized_role,
     )
     return user
 

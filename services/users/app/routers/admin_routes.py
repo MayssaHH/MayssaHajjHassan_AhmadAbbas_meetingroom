@@ -14,7 +14,9 @@ from pydantic import BaseModel
 from common.rbac import ROLE_ADMIN
 from db.schema import User
 from services.users.app.dependencies import get_db, require_roles
+from services.users.app.schemas import RoleLiteral
 from services.users.app.repository import user_repository
+from services.users.app.service_layer import user_service
 
 
 router = APIRouter()
@@ -25,7 +27,7 @@ class RoleUpdatePayload(BaseModel):
     Pydantic model describing the payload for role updates.
     """
 
-    role: str
+    role: RoleLiteral
 
 
 @router.patch("/{user_id}/role", status_code=status.HTTP_200_OK)
@@ -46,7 +48,15 @@ def update_user_role(
             detail="User not found.",
         )
 
-    user.role = payload.role
+    try:
+        normalized_role = user_service.normalize_role(payload.role)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
+
+    user.role = normalized_role
     user_repository.save_user(db, user)
     return {"id": user.id, "role": user.role}
 
