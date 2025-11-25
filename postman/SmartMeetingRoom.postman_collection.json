@@ -1,10 +1,239 @@
 {
   "info": {
-    "_postman_id": "00000000-0000-0000-0000-000000000000",
+    "_postman_id": "11111111-1111-1111-1111-111111111111",
     "name": "Smart Meeting Room Backend",
-    "description": "Initial Postman collection skeleton for the Smart Meeting Room project. Endpoints for Users, Rooms, Bookings, and Reviews services will be added incrementally in later commits.",
+    "description": "Postman collection for the Smart Meeting Room backend. This version defines the Users service endpoints; Rooms, Bookings and Reviews will be added in later commits.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
-  "item": []
+  "variable": [
+    {
+      "key": "users_base_url",
+      "value": "http://localhost:8001"
+    }
+  ],
+  "item": [
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Register user",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Alice Example\",\n  \"username\": \"alice\",\n  \"email\": \"alice@example.com\",\n  \"password\": \"password123\",\n  \"role\": \"regular\"\n}"
+            },
+            "url": {
+              "raw": "{{users_base_url}}/users/register",
+              "host": [
+                "{{users_base_url}}"
+              ],
+              "path": [
+                "users",
+                "register"
+              ]
+            },
+            "description": "Register a new user account."
+          },
+          "response": []
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"alice\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{users_base_url}}/users/login",
+              "host": [
+                "{{users_base_url}}"
+              ],
+              "path": [
+                "users",
+                "login"
+              ]
+            },
+            "description": "Authenticate a user and obtain a JWT access token."
+          },
+          "response": []
+        },
+        {
+          "name": "Get current user (/users/me)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "description": "Replace {{access_token}} with a token returned by the Login request."
+              }
+            ],
+            "url": {
+              "raw": "{{users_base_url}}/users/me",
+              "host": [
+                "{{users_base_url}}"
+              ],
+              "path": [
+                "users",
+                "me"
+              ]
+            },
+            "description": "Return the profile of the currently authenticated user."
+          },
+          "response": []
+        },
+        {
+          "name": "List users (admin only)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}",
+                "description": "JWT for an admin user."
+              }
+            ],
+            "url": {
+              "raw": "{{users_base_url}}/users",
+              "host": [
+                "{{users_base_url}}"
+              ],
+              "path": [
+                "users"
+              ]
+            },
+            "description": "Return all users. Only admins should be allowed to call this endpoint."
+          },
+          "response": []
+        },
+        {
+          "name": "Get user by username (admin only)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{users_base_url}}/users/{{username}}",
+              "host": [
+                "{{users_base_url}}"
+              ],
+              "path": [
+                "users",
+                "{{username}}"
+              ]
+            },
+            "description": "Retrieve a single user by username. Admin-only endpoint."
+          },
+          "response": []
+        },
+        {
+          "name": "Update my profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Alice Updated\",\n  \"email\": \"alice.updated@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{users_base_url}}/users/me",
+              "host": [
+                "{{users_base_url}}"
+              ],
+              "path": [
+                "users",
+                "me"
+              ]
+            },
+            "description": "Update the profile of the currently authenticated user."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete my account",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{users_base_url}}/users/me",
+              "host": [
+                "{{users_base_url}}"
+              ],
+              "path": [
+                "users",
+                "me"
+              ]
+            },
+            "description": "Delete the currently authenticated user's account."
+          },
+          "response": []
+        },
+        {
+          "name": "Change user role (admin only)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"moderator\"\n}"
+            },
+            "url": {
+              "raw": "{{users_base_url}}/users/{{user_id}}/role",
+              "host": [
+                "{{users_base_url}}"
+              ],
+              "path": [
+                "users",
+                "{{user_id}}",
+                "role"
+              ]
+            },
+            "description": "Change the role of a specific user. Only admins are allowed to call this endpoint."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
 }
-

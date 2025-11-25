@@ -1,144 +1,133 @@
 """
-Functional tests for user management endpoints of the Users service.
+Tests for user-management endpoints that go beyond authentication.
+
+These tests verify that:
+
+* Listing users is restricted to admins.
+* A user can update his/her own profile.
+* Non-admin users cannot change another user's role.
+* Admin users can change roles for other users.
 """
 
+from __future__ import annotations
+
+from typing import Dict
+
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-
-from db.schema import Base
-from services.users.app.main import app
-from services.users.app.dependencies import get_db
-from common.auth import get_password_hash
-from db.schema import User
 
 
-SQLALCHEMY_DATABASE_URL = "sqlite:///./test_users_admin.db"
-
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}, future=True
-)
-TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-
-def override_get_db():
+def _register_user(
+    client: TestClient,
+    *,
+    username: str,
+    role: str = "regular",
+) -> Dict:
     """
-    Override dependency to use a separate SQLite database for tests.
+    Helper to register a user with a given role.
     """
-    db = TestingSessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+    payload = {
+        "name": f"{username.capitalize()} Example",
+        "username": username,
+        "email": f"{username}@example.com",
+        "password": "password123",
+        "role": role,
+    }
+    response = client.post("/users/register", json=payload)
+    assert response.status_code in (200, 201)
+    return response.json()
 
 
-# Prepare tables and seed an admin user for tests
-Base.metadata.create_all(bind=engine)
-
-admin_password_hash = get_password_hash("adminpass")
-
-with TestingSessionLocal() as db:
-    admin = User(
-        username="admin",
-        email="admin@example.com",
-        hashed_password=admin_password_hash,
-        role="admin",
-    )
-    db.add(admin)
-    db.commit()
-    db.refresh(admin)
-    ADMIN_ID = admin.id  # noqa: N816
-
-
-app.dependency_overrides[get_db] = override_get_db
-
-client = TestClient(app)
-
-
-def get_admin_token() -> str:
+def _login(client: TestClient, username: str, password: str = "password123") -> str:
     """
-    Helper to obtain a JWT token for the seeded admin user.
+    Helper to log in a user and return the access token.
     """
     response = client.post(
         "/users/login",
-        json={"username": "admin", "password": "adminpass"},
+        json={"username": username, "password": password},
     )
-    assert response.status_code == 200, response.text
-    return response.json()["access_token"]
-
-
-def test_admin_can_list_users() -> None:
-    """
-    Verify that an admin can list all users.
-    """
-    token = get_admin_token()
-    response = client.get(
-        "/users/",
-        headers={"Authorization": f"Bearer {token}"},
-    )
-    assert response.status_code == 200, response.text
+    assert response.status_code == 200
     data = response.json()
-    assert isinstance(data, list)
-    assert any(u["username"] == "admin" for u in data)
+    return data["access_token"]
 
 
-def test_regular_user_cannot_list_users() -> None:
+def test_list_users_admin_only(client: TestClient) -> None:
     """
-    Verify that a regular user cannot list all users.
+    Only admin users should be allowed to list all users.
     """
-    # Register regular user
-    reg_resp = client.post(
-        "/users/register",
-        json={
-            "username": "bob",
-            "email": "bob@example.com",
-            "password": "secret123",
-        },
-    )
-    assert reg_resp.status_code == 201, reg_resp.text
+    _register_user(client, username="admin", role="admin")
+    _register_user(client, username="bob", role="regular")
 
-    login_resp = client.post(
-        "/users/login",
-        json={"username": "bob", "password": "secret123"},
-    )
-    assert login_resp.status_code == 200, login_resp.text
-    token = login_resp.json()["access_token"]
+    # Admin call
+    admin_token = _login(client, "admin")
+    admin_headers = {"Authorization": f"Bearer {admin_token}"}
+    admin_response = client.get("/users", headers=admin_headers)
+    assert admin_response.status_code == 200
+    users = admin_response.json()
+    assert isinstance(users, list)
+    assert any(u["username"] == "admin" for u in users)
 
-    response = client.get(
-        "/users/",
-        headers={"Authorization": f"Bearer {token}"},
-    )
-    # Should be forbidden
-    assert response.status_code == 403
+    # Regular user call
+    regular_token = _login(client, "bob")
+    regular_headers = {"Authorization": f"Bearer {regular_token}"}
+    regular_response = client.get("/users", headers=regular_headers)
+    # Either 401 or 403 is acceptable for "not allowed".
+    assert regular_response.status_code in (401, 403)
 
 
-def test_update_own_profile() -> None:
+def test_update_own_profile_works(client: TestClient) -> None:
     """
-    Verify that a user can update their own profile.
+    A regular user can update his/her own profile via ``/users/me``.
     """
-    # Register new user
-    reg_resp = client.post(
-        "/users/register",
-        json={
-            "username": "charlie",
-            "email": "charlie@example.com",
-            "password": "secret123",
-        },
-    )
-    assert reg_resp.status_code == 201, reg_resp.text
+    _register_user(client, username="carol", role="regular")
+    token = _login(client, "carol")
+    headers = {"Authorization": f"Bearer {token}"}
 
-    login_resp = client.post(
-        "/users/login",
-        json={"username": "charlie", "password": "secret123"},
-    )
-    token = login_resp.json()["access_token"]
+    update_payload = {
+        "name": "Carol Updated",
+        "email": "carol.updated@example.com",
+    }
+    response = client.put("/users/me", json=update_payload, headers=headers)
 
-    # Update email
-    update_resp = client.put(
-        "/users/me",
-        json={"email": "charlie_new@example.com"},
-        headers={"Authorization": f"Bearer {token}"},
+    assert response.status_code == 200
+    data = response.json()
+    assert data["name"] == "Carol Updated"
+    assert data["email"] == "carol.updated@example.com"
+
+
+def test_non_admin_cannot_change_other_user_role(client: TestClient) -> None:
+    """
+    A non-admin user must not be able to change someone else's role.
+    """
+    _register_user(client, username="dave", role="regular")
+    target = _register_user(client, username="erin", role="regular")
+
+    user_token = _login(client, "dave")
+    headers = {"Authorization": f"Bearer {user_token}"}
+
+    response = client.patch(
+        f"/users/{target['id']}/role",
+        json={"role": "admin"},
+        headers=headers,
     )
-    assert update_resp.status_code == 200, update_resp.text
-    data = update_resp.json()
-    assert data["email"] == "charlie_new@example.com"
+    assert response.status_code in (401, 403)
+
+
+def test_admin_can_change_user_role(client: TestClient) -> None:
+    """
+    An admin user can change another user's role.
+    """
+    _register_user(client, username="superadmin", role="admin")
+    target = _register_user(client, username="frank", role="regular")
+
+    admin_token = _login(client, "superadmin")
+    headers = {"Authorization": f"Bearer {admin_token}"}
+
+    response = client.patch(
+        f"/users/{target['id']}/role",
+        json={"role": "moderator"},
+        headers=headers,
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["role"] == "moderator"

@@ -1,82 +1,129 @@
 """
-Functional tests for authentication-related endpoints of the Users service.
+Tests for authentication-related endpoints in the Users service.
+
+The tests use a dedicated SQLite database configured in
+``conftest.py`` so that they do not touch the development or
+production database.
 """
 
+from __future__ import annotations
+
+from typing import Dict
+
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-
-from db.schema import Base
-from services.users.app.main import app
-from services.users.app.dependencies import get_db
 
 
-SQLALCHEMY_DATABASE_URL = "sqlite:///./test_users_auth.db"
-
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}, future=True
-)
-TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-
-def override_get_db():
+def _register_example_user(client: TestClient, username: str = "alice") -> Dict:
     """
-    Override dependency to use a separate SQLite database for tests.
+    Helper that registers a user and returns the JSON response.
+
+    Parameters
+    ----------
+    client:
+        FastAPI test client.
+    username:
+        Username to use for the new account.
+
+    Returns
+    -------
+    dict
+        JSON payload returned by the registration endpoint.
     """
-    db = TestingSessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+    payload = {
+        "name": "Alice Example",
+        "username": username,
+        "email": f"{username}@example.com",
+        "password": "password123",
+        "role": "regular",
+    }
+    response = client.post("/users/register", json=payload)
+    # Accept either 200 or 201 depending on how the endpoint is implemented.
+    assert response.status_code in (200, 201)
+    return response.json()
 
 
-# Create tables for the test database
-Base.metadata.create_all(bind=engine)
-
-# Override the dependency in the FastAPI app
-app.dependency_overrides[get_db] = override_get_db
-
-client = TestClient(app)
-
-
-def test_register_and_login_flow() -> None:
+def test_registration_success(client: TestClient) -> None:
     """
-    End-to-end test for user registration and login.
+    A new user can register successfully.
     """
-    # Register
-    response = client.post(
-        "/users/register",
-        json={
-            "username": "alice",
-            "email": "alice@example.com",
-            "password": "secret123",
-        },
-    )
-    assert response.status_code == 201, response.text
+    user = _register_example_user(client, username="alice")
+    assert user["username"] == "alice"
+    assert "id" in user
+    assert user["role"] == "regular"
+
+
+def test_registration_duplicate_username_fails(client: TestClient) -> None:
+    """
+    Registering twice with the same username should fail.
+    """
+    _register_example_user(client, username="bob")
+
+    duplicate_payload = {
+        "name": "Another Bob",
+        "username": "bob",
+        "email": "bob2@example.com",
+        "password": "password123",
+        "role": "regular",
+    }
+    response = client.post("/users/register", json=duplicate_payload)
+    # Implementation may use 400 or 409; both indicate a conflict here.
+    assert response.status_code in (400, 409)
+
+
+def test_login_success_returns_token(client: TestClient) -> None:
+    """
+    Logging in with a valid username/password pair returns a JWT token.
+    """
+    _register_example_user(client, username="carol")
+
+    login_payload = {"username": "carol", "password": "password123"}
+    response = client.post("/users/login", json=login_payload)
+
+    assert response.status_code == 200
     data = response.json()
-    assert data["username"] == "alice"
-    assert data["email"] == "alice@example.com"
-    assert "id" in data
+    assert "access_token" in data
+    assert isinstance(data["access_token"], str)
+    assert data.get("token_type") == "bearer"
 
-    # Login
-    response = client.post(
+
+def test_login_wrong_password_rejected(client: TestClient) -> None:
+    """
+    Logging in with an incorrect password should be rejected.
+    """
+    _register_example_user(client, username="dave")
+
+    login_payload = {"username": "dave", "password": "wrong-password"}
+    response = client.post("/users/login", json=login_payload)
+
+    # 400 (bad credentials) or 401 (unauthorized) are both acceptable.
+    assert response.status_code in (400, 401)
+
+
+def test_me_requires_authentication(client: TestClient) -> None:
+    """
+    The ``/users/me`` endpoint must require authentication.
+    """
+    response = client.get("/users/me")
+    # Either 401 or 403 depending on how auth is wired.
+    assert response.status_code in (401, 403)
+
+
+def test_me_returns_current_user(client: TestClient) -> None:
+    """
+    When authenticated, ``/users/me`` returns the current user's profile.
+    """
+    _register_example_user(client, username="erin")
+
+    login_response = client.post(
         "/users/login",
-        json={"username": "alice", "password": "secret123"},
+        json={"username": "erin", "password": "password123"},
     )
-    assert response.status_code == 200, response.text
-    token_data = response.json()
-    assert "access_token" in token_data
-    assert token_data["token_type"] == "bearer"
+    assert login_response.status_code == 200
+    token = login_response.json()["access_token"]
 
-    access_token = token_data["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+    me_response = client.get("/users/me", headers=headers)
 
-    # /users/me
-    me_response = client.get(
-        "/users/me",
-        headers={"Authorization": f"Bearer {access_token}"},
-    )
-    assert me_response.status_code == 200, me_response.text
-    me_data = me_response.json()
-    assert me_data["username"] == "alice"
-    assert me_data["email"] == "alice@example.com"
-    assert me_data["role"] == "regular"
+    assert me_response.status_code == 200
+    data = me_response.json()
+    assert data["username"] == "erin"

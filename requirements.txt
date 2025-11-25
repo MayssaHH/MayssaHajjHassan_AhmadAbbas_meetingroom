@@ -11,6 +11,7 @@ pytest
 pytest-asyncio
 sphinx
 sphinx-autodoc-typehints
+PyJWT
 pydantic[email]
 python-jose[cryptography]
 passlib[bcrypt]
