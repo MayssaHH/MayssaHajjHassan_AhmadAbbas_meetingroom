@@ -30,6 +30,32 @@ def _make_token(user_id: int, role: str, username: str | None = None) -> str:
     return create_access_token(payload)
 
 
+def _create_room(
+    client: TestClient,
+    *,
+    token: str,
+    name: str,
+    location: str = "HQ",
+    capacity: int = 10,
+    equipment: list[str] | None = None,
+    status: str = "active",
+) -> int:
+    payload = {
+        "name": name,
+        "location": location,
+        "capacity": capacity,
+        "equipment": equipment or [],
+        "status": status,
+    }
+    response = client.post(
+        "/rooms",
+        json=payload,
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code in (200, 201), response.text
+    return response.json()["id"]
+
+
 def test_facility_manager_can_create_room(client: TestClient) -> None:
     """
     Facility managers should be allowed to create new rooms.
@@ -156,3 +182,86 @@ def test_room_status_endpoint_returns_static_status(client: TestClient) -> None:
     assert data["room_id"] == room_id
     assert data["static_status"] == "active"
     assert isinstance(data["is_currently_booked"], bool)
+
+
+def test_room_manager_can_update_room(client: TestClient) -> None:
+    """
+    Updating a room should be allowed for facility managers.
+    """
+    manager_token = _make_token(user_id=1, role="facility_manager")
+    room_id = _create_room(
+        client,
+        token=manager_token,
+        name="UpdateRoom",
+        equipment=["tv"],
+    )
+
+    update_payload = {
+        "location": "Annex",
+        "capacity": 25,
+        "equipment": ["tv", "mic"],
+        "status": "out_of_service",
+    }
+    response = client.put(
+        f"/rooms/{room_id}",
+        json=update_payload,
+        headers={"Authorization": f"Bearer {manager_token}"},
+    )
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["location"] == "Annex"
+    assert body["capacity"] == 25
+    assert sorted(body["equipment"]) == ["mic", "tv"]
+    assert body["status"] == "out_of_service"
+
+
+def test_regular_user_cannot_update_room(client: TestClient) -> None:
+    """
+    Regular users must not be able to update rooms.
+    """
+    manager_token = _make_token(user_id=1, role="facility_manager")
+    room_id = _create_room(client, token=manager_token, name="BlockedRoom")
+
+    regular_token = _make_token(user_id=2, role="regular")
+    response = client.put(
+        f"/rooms/{room_id}",
+        json={"capacity": 999},
+        headers={"Authorization": f"Bearer {regular_token}"},
+    )
+    assert response.status_code in (401, 403)
+
+
+def test_room_manager_can_delete_room(client: TestClient) -> None:
+    """
+    Facility managers should be able to delete rooms.
+    """
+    manager_token = _make_token(user_id=1, role="facility_manager")
+    room_id = _create_room(client, token=manager_token, name="DeleteRoom")
+
+    response = client.delete(
+        f"/rooms/{room_id}",
+        headers={"Authorization": f"Bearer {manager_token}"},
+    )
+    assert response.status_code == 204
+
+    # Subsequent fetch should 404
+    check = client.get(
+        f"/rooms/{room_id}",
+        headers={"Authorization": f"Bearer {manager_token}"},
+    )
+    assert check.status_code == 404
+
+
+def test_regular_user_cannot_delete_room(client: TestClient) -> None:
+    """
+    Regular users should not be able to delete rooms.
+    """
+    manager_token = _make_token(user_id=1, role="facility_manager")
+    room_id = _create_room(client, token=manager_token, name="NoDeleteRoom")
+
+    regular_token = _make_token(user_id=2, role="regular")
+    response = client.delete(
+        f"/rooms/{room_id}",
+        headers={"Authorization": f"Bearer {regular_token}"},
+    )
+    assert response.status_code in (401, 403)

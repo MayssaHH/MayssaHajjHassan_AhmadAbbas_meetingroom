@@ -15,7 +15,7 @@ from typing import List
 
 from sqlalchemy.orm import Session
 
-from db.schema import Booking
+from db.schema import Booking, Room, User
 from services.bookings.app.repository import booking_repository
 
 
@@ -82,6 +82,8 @@ def create_booking(
         If a conflict exists and ``force_override`` is False.
     """
     _validate_time_range(start_time, end_time)
+    _ensure_user_exists(db, user_id)
+    _ensure_room_exists(db, room_id)
 
     conflicts = booking_repository.find_conflicting_bookings(
         db,
@@ -226,3 +228,17 @@ def cancel_booking(
 
     booking.status = "cancelled"
     return booking_repository.save_booking(db, booking)
+def _ensure_room_exists(db: Session, room_id: int) -> None:
+    """
+    Ensure the referenced room exists before creating a booking.
+    """
+    if db.get(Room, room_id) is None:
+        raise ValueError("Room does not exist.")
+
+
+def _ensure_user_exists(db: Session, user_id: int) -> None:
+    """
+    Ensure the user making the booking exists.
+    """
+    if db.get(User, user_id) is None:
+        raise ValueError("User does not exist.")

@@ -131,3 +131,58 @@ def test_admin_can_change_user_role(client: TestClient) -> None:
     assert response.status_code == 200
     data = response.json()
     assert data["role"] == "moderator"
+
+
+def test_update_profile_rejects_duplicate_email(client: TestClient) -> None:
+    """
+    Updating to an email already in use should return HTTP 400.
+    """
+    _register_user(client, username="alice", role="regular")
+    _register_user(client, username="bruce", role="regular")
+
+    token = _login(client, "bruce")
+    headers = {"Authorization": f"Bearer {token}"}
+    response = client.put(
+        "/users/me",
+        json={"email": "alice@example.com"},
+        headers=headers,
+    )
+    assert response.status_code == 400
+    assert "Email is already in use." in response.json()["detail"]
+
+
+def test_update_profile_rejects_duplicate_username(client: TestClient) -> None:
+    """
+    Updating to an existing username should return HTTP 400.
+    """
+    _register_user(client, username="charlie", role="regular")
+    _register_user(client, username="diana", role="regular")
+
+    token = _login(client, "diana")
+    headers = {"Authorization": f"Bearer {token}"}
+    response = client.put(
+        "/users/me",
+        json={"username": "charlie"},
+        headers=headers,
+    )
+    assert response.status_code == 400
+    assert "Username is already taken." in response.json()["detail"]
+
+
+def test_admin_role_update_rejects_invalid_role(client: TestClient) -> None:
+    """
+    Admin role updates should validate the requested role value.
+    """
+    _register_user(client, username="chiefadmin", role="admin")
+    target = _register_user(client, username="eve", role="regular")
+
+    admin_token = _login(client, "chiefadmin")
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    response = client.patch(
+        f"/users/{target['id']}/role",
+        json={"role": "superhero"},
+        headers=headers,
+    )
+    assert response.status_code == 422
+    detail = response.json()["detail"]
+    assert any("Input should be" in item["msg"] for item in detail)

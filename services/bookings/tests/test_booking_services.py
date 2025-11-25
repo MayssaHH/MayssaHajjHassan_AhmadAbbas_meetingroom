@@ -5,8 +5,9 @@ Unit tests for the core booking service logic (no HTTP layer).
 from datetime import datetime, timedelta
 
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import Session, sessionmaker
 
+import pytest
 import sys
 from pathlib import Path
 
@@ -35,38 +36,41 @@ def setup_module(module) -> None:  # noqa: D401
     Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
     with TestingSessionLocal() as db:
-        # Clear existing bookings to avoid conflicts
         db.query(Booking).delete()
-        
-        # Seed one user and one room if they do not exist
-        if not db.query(User).filter_by(username="alice").first():
-            user = User(
-                name="Alice",
-                username="alice",
-                email="alice@example.com",
-                password_hash="hashed",
-                role="regular",
-            )
-            db.add(user)
-        if not db.query(Room).filter_by(name="Room A").first():
-            room = Room(
-                name="Room A",
-                capacity=10,
-                equipment="[]",
-                location="Building A",
-                status="active",
-            )
-            db.add(room)
-        if not db.query(Room).filter_by(name="Room Z").first():
-            room_z = Room(
-                name="Room Z",
-                capacity=10,
-                equipment="[]",
-                location="Building A",
-                status="active",
-            )
-            db.add(room_z)
+
+        for username, role in (
+            ("alice", "regular"),
+            ("bob", "regular"),
+            ("admin", "admin"),
+        ):
+            if not db.query(User).filter_by(username=username).first():
+                db.add(
+                    User(
+                        name=username.title(),
+                        username=username,
+                        email=f"{username}@example.com",
+                        password_hash="hashed",
+                        role=role,
+                    )
+                )
+
+        for room_name in ("Room A", "Room Z"):
+            if not db.query(Room).filter_by(name=room_name).first():
+                db.add(
+                    Room(
+                        name=room_name,
+                        capacity=10,
+                        equipment="[]",
+                        location="Building A",
+                        status="active",
+                    )
+                )
         db.commit()
+
+
+def _clear_bookings(db: Session) -> None:
+    db.query(Booking).delete()
+    db.commit()
 
 
 def test_create_booking_without_conflict() -> None:
@@ -74,9 +78,7 @@ def test_create_booking_without_conflict() -> None:
     Creating a booking in an empty interval should succeed.
     """
     with TestingSessionLocal() as db:
-        # Clear any existing bookings for this room
-        db.query(Booking).delete()
-        db.commit()
+        _clear_bookings(db)
         
         user = db.query(User).filter_by(username="alice").first()
         room = db.query(Room).filter_by(name="Room A").first()
@@ -108,11 +110,7 @@ def test_conflicting_booking_raises_error() -> None:
     BookingConflictError when override is disabled.
     """
     with TestingSessionLocal() as db:
-        # Clear any existing bookings for this room
-        room_a = db.query(Room).filter_by(name="Room A").first()
-        if room_a:
-            db.query(Booking).filter_by(room_id=room_a.id).delete()
-        db.commit()
+        _clear_bookings(db)
         
         user = db.query(User).filter_by(username="alice").first()
         room = db.query(Room).filter_by(name="Room A").first()
@@ -156,11 +154,7 @@ def test_admin_override_cancels_conflicts() -> None:
     should be marked as cancelled.
     """
     with TestingSessionLocal() as db:
-        # Clear any existing bookings for this room
-        room_z = db.query(Room).filter_by(name="Room Z").first()
-        if room_z:
-            db.query(Booking).filter_by(room_id=room_z.id).delete()
-        db.commit()
+        _clear_bookings(db)
         
         # Seed admin user if needed
         admin = db.query(User).filter_by(username="admin").first()
@@ -209,3 +203,225 @@ def test_admin_override_cancels_conflicts() -> None:
         assert existing.status == "cancelled"
         assert new_booking.status == "confirmed"
         assert new_booking.id != existing.id
+
+
+def test_create_booking_invalid_range_raises_value_error() -> None:
+    """
+    Creating a booking with an inverted time range should raise ValueError.
+    """
+    with TestingSessionLocal() as db:
+        user = db.query(User).filter_by(username="alice").one()
+        room = db.query(Room).filter_by(name="Room A").one()
+        start = datetime.now() + timedelta(days=5)
+        end = start - timedelta(hours=1)
+
+        try:
+            booking_service.create_booking(
+                db,
+                user_id=user.id,
+                role=user.role,
+                room_id=room.id,
+                start_time=start,
+                end_time=end,
+                force_override=False,
+            )
+            assert False, "Expected ValueError for invalid time range"
+        except ValueError:
+            pass
+
+
+def test_update_booking_conflict_detected() -> None:
+    """
+    Updating a booking to overlap another one should raise BookingConflictError.
+    """
+    with TestingSessionLocal() as db:
+        _clear_bookings(db)
+
+        user = db.query(User).filter_by(username="alice").one()
+        room = db.query(Room).filter_by(name="Room A").one()
+
+        start = datetime.now() + timedelta(days=20)
+        end = start + timedelta(hours=1)
+        first = booking_service.create_booking(
+            db,
+            user_id=user.id,
+            role=user.role,
+            room_id=room.id,
+            start_time=start,
+            end_time=end,
+            force_override=False,
+        )
+
+        # Second booking to conflict with
+        other = booking_service.create_booking(
+            db,
+            user_id=user.id,
+            role=user.role,
+            room_id=room.id,
+            start_time=start + timedelta(hours=2),
+            end_time=end + timedelta(hours=2),
+            force_override=False,
+        )
+
+        try:
+            booking_service.update_booking_time(
+                db,
+                booking_id=other.id,
+                caller_user_id=user.id,
+                caller_role=user.role,
+                start_time=start,
+                end_time=end,
+            )
+            assert False, "Expected BookingConflictError"
+        except booking_service.BookingConflictError:
+            pass
+
+
+def test_cancel_booking_permission_enforced() -> None:
+    """
+    A user cannot cancel another user's booking unless they are admin.
+    """
+    with TestingSessionLocal() as db:
+        _clear_bookings(db)
+
+        alice = db.query(User).filter_by(username="alice").one()
+        bob = db.query(User).filter_by(username="bob").one()
+        room = db.query(Room).filter_by(name="Room Z").one()
+
+        start = datetime.now() + timedelta(days=25)
+        end = start + timedelta(hours=1)
+        victim = booking_service.create_booking(
+            db,
+            user_id=alice.id,
+            role=alice.role,
+            room_id=room.id,
+            start_time=start,
+            end_time=end,
+            force_override=False,
+        )
+
+        try:
+            booking_service.cancel_booking(
+                db,
+                booking_id=victim.id,
+                caller_user_id=bob.id,
+                caller_role=bob.role,
+                force=False,
+            )
+            assert False, "Expected BookingPermissionError"
+        except booking_service.BookingPermissionError:
+            pass
+
+        # Admin force cancel should succeed
+        admin = db.query(User).filter_by(username="admin").first()
+        if admin is None:
+            admin = User(
+                name="Admin",
+                username="admin",
+                email="admin2@example.com",
+                password_hash="hashed",
+                role="admin",
+            )
+            db.add(admin)
+            db.commit()
+            db.refresh(admin)
+
+        cancelled = booking_service.cancel_booking(
+            db,
+            booking_id=victim.id,
+            caller_user_id=admin.id,
+            caller_role=admin.role,
+            force=True,
+        )
+        assert cancelled.status == "cancelled"
+
+
+def test_create_booking_nonexistent_room_raises_value_error() -> None:
+    """
+    The service should reject bookings for rooms that do not exist.
+    """
+    with TestingSessionLocal() as db:
+        _clear_bookings(db)
+        user = db.query(User).filter_by(username="alice").one()
+        start = datetime.now() + timedelta(days=2)
+        end = start + timedelta(hours=1)
+
+        with pytest.raises(ValueError, match="Room does not exist"):
+            booking_service.create_booking(
+                db,
+                user_id=user.id,
+                role=user.role,
+                room_id=9999,
+                start_time=start,
+                end_time=end,
+                force_override=False,
+            )
+
+
+def test_create_booking_nonexistent_user_raises_value_error() -> None:
+    """
+    The service should reject bookings for users that do not exist.
+    """
+    with TestingSessionLocal() as db:
+        _clear_bookings(db)
+        room = db.query(Room).filter_by(name="Room A").one()
+        start = datetime.now() + timedelta(days=3)
+        end = start + timedelta(hours=1)
+
+        with pytest.raises(ValueError, match="User does not exist"):
+            booking_service.create_booking(
+                db,
+                user_id=9999,
+                role="regular",
+                room_id=room.id,
+                start_time=start,
+                end_time=end,
+                force_override=False,
+            )
+
+
+def test_update_booking_different_room_no_conflict() -> None:
+    """
+    Updating a booking should only check conflicts within the same room.
+    """
+    with TestingSessionLocal() as db:
+        _clear_bookings(db)
+        user = db.query(User).filter_by(username="alice").one()
+        room_a = db.query(Room).filter_by(name="Room A").one()
+        room_z = db.query(Room).filter_by(name="Room Z").one()
+
+        start = datetime.now() + timedelta(days=5)
+        end = start + timedelta(hours=1)
+        first = booking_service.create_booking(
+            db,
+            user_id=user.id,
+            role=user.role,
+            room_id=room_a.id,
+            start_time=start,
+            end_time=end,
+            force_override=False,
+        )
+
+        second = booking_service.create_booking(
+            db,
+            user_id=user.id,
+            role=user.role,
+            room_id=room_z.id,
+            start_time=start + timedelta(hours=2),
+            end_time=end + timedelta(hours=2),
+            force_override=False,
+        )
+
+        # Update second booking to overlap the first booking's window.
+        updated = booking_service.update_booking_time(
+            db,
+            booking_id=second.id,
+            caller_user_id=user.id,
+            caller_role=user.role,
+            start_time=start + timedelta(minutes=15),
+            end_time=end + timedelta(minutes=15),
+        )
+
+        assert updated.id == second.id
+        assert updated.start_time == start + timedelta(minutes=15)
+        assert updated.room_id == room_z.id
