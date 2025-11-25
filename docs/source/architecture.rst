@@ -20,3 +20,12 @@ ecosystem built around four main services:
 All services share a common relational database schema (implemented in
 ``db.schema``) and communicate with each other over HTTP using
 well-defined APIs and a dedicated ``service_account`` user.
+
+Rooms Service
+-------------
+
+The Rooms service is responsible for storing and exposing meeting room metadata,
+including capacity, equipment, and location. It provides filtered search for
+rooms and a status endpoint that can be combined with booking information from
+the Bookings service to determine availability.
+
