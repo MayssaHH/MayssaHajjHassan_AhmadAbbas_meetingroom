@@ -11,10 +11,9 @@ This router exposes endpoints for:
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from db.init_db import get_db
 from db.schema import User
 from services.users.app import schemas
-from services.users.app.dependencies import get_current_user
+from services.users.app.dependencies import get_current_user, get_db
 from services.users.app.service_layer import user_service
 
 router = APIRouter()
@@ -36,9 +35,11 @@ def register_user(
     try:
         user: User = user_service.register_user(
             db,
+            name=payload.name,
             username=payload.username,
             email=payload.email,
             password=payload.password,
+            role=payload.role,
         )
     except ValueError as exc:
         raise HTTPException(

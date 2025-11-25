@@ -14,10 +14,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from common.rbac import ROLE_ADMIN, ROLE_AUDITOR
-from db.init_db import get_db
 from db.schema import User
 from services.users.app import schemas
-from services.users.app.dependencies import get_current_user, require_roles
+from services.users.app.dependencies import get_current_user, get_db, require_roles
 from services.users.app.repository import user_repository
 
 router = APIRouter()
@@ -81,6 +80,9 @@ def update_current_user(
                 detail="Email is already in use.",
             )
         current_user.email = payload.email
+
+    if payload.name is not None:
+        current_user.name = payload.name
 
     updated_user = user_repository.save_user(db, current_user)
     return updated_user

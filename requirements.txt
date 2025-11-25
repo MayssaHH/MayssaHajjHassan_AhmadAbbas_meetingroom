@@ -15,3 +15,4 @@ PyJWT
 pydantic[email]
 python-jose[cryptography]
 passlib[bcrypt]
+bcrypt<5.0.0

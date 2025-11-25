@@ -1,46 +1,45 @@
 """
-Database engine and session management.
+Database engine and session management utilities.
 
-This module creates the SQLAlchemy engine and session factory based on the
-configured database URL. It also exposes a :func:`get_db` dependency that
-can be used in FastAPI routes.
+This module centralizes the SQLAlchemy engine creation so that both the
+application code and one-off scripts (such as schema initialization) can
+share the exact same configuration.
 """
 
+from __future__ import annotations
+
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import Session, sessionmaker
 
 from common.config import get_settings
 from db.schema import Base
 
 settings = get_settings()
 
-# For SQLite, ``check_same_thread`` is required in some environments.
-connect_args = {}
-if settings.database_url.startswith("sqlite"):
-    connect_args = {"check_same_thread": False}
+# Some SQLite clients require this flag; it's ignored for PostgreSQL.
+CONNECT_ARGS = {"check_same_thread": False} if settings.database_url.startswith("sqlite") else {}
 
-engine = create_engine(settings.database_url, connect_args=connect_args, future=True)
+engine = create_engine(settings.database_url, connect_args=CONNECT_ARGS, future=True)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
 def init_db() -> None:
-    """
-    Create all database tables if they do not already exist.
-    """
+    """Create database tables if they do not exist."""
     Base.metadata.create_all(bind=engine)
 
 
 def get_db() -> Session:
     """
-    FastAPI dependency that yields a database session.
+    Yield a database session for FastAPI dependencies.
 
-    Yields
-    ------
-    Session
-        A SQLAlchemy session tied to the current request.
+    The session is closed automatically once the request finishes.
     """
     db = SessionLocal()
     try:
         yield db
     finally:
         db.close()
+
+
+if __name__ == "__main__":
+    init_db()

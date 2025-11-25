@@ -34,4 +34,4 @@ def health_check() -> dict:
 
 app.include_router(auth_routes.router, prefix="/users", tags=["auth"])
 app.include_router(users_routes.router, prefix="/users", tags=["users"])
-app.include_router(admin_routes.router, prefix="/admin/users", tags=["admin-users"])
+app.include_router(admin_routes.router, prefix="/users", tags=["admin-users"])
