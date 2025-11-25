@@ -54,3 +54,13 @@ def is_role_allowed(user_role: str, allowed_roles: Iterable[str]) -> bool:
         otherwise ``False``.
     """
     return user_role in allowed_roles
+
+
+def has_role(user_role: str, allowed_roles: Iterable[str]) -> bool:
+    """
+    Alias for :func:`is_role_allowed` kept for backward compatibility.
+
+    Some services import ``has_role`` instead of ``is_role_allowed``.
+    """
+
+    return is_role_allowed(user_role, allowed_roles)

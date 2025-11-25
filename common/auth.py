@@ -22,16 +22,25 @@ from common.config import get_settings
 
 _pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-def create_access_token(*, subject: str, role: str, expires_delta: Optional[timedelta] = None) -> str:
+def create_access_token(
+    payload: Optional[Dict[str, Any]] = None,
+    *,
+    subject: Optional[str] = None,
+    role: Optional[str] = None,
+    expires_delta: Optional[timedelta] = None,
+) -> str:
     """
     Create a signed JWT access token for a given subject and role.
 
     Parameters
     ----------
+    payload:
+        Optional dictionary of claims to encode directly into the token.
+        If omitted, ``subject`` and ``role`` must be provided.
     subject:
-        A string identifier for the authenticated principal (usually the user ID).
+        Convenience parameter to populate/override the ``sub`` claim.
     role:
-        The role of the authenticated user, used for RBAC decisions.
+        Convenience parameter to populate/override the ``role`` claim.
     expires_delta:
         Optional lifetime for the token as a :class:`datetime.timedelta`.
 
@@ -47,14 +56,28 @@ def create_access_token(*, subject: str, role: str, expires_delta: Optional[time
     """
     
     settings = get_settings()
+    claims: Dict[str, Any] = {}
+    if payload:
+        claims.update(payload)
+
+    if subject is not None:
+        claims["sub"] = subject
+    if role is not None:
+        claims["role"] = role
+
+    if "sub" not in claims or "role" not in claims:
+        raise ValueError("Both 'sub' and 'role' claims are required to create an access token.")
+
     if expires_delta is None:
         expires_delta = timedelta(minutes=settings.access_token_expire_minutes)
 
     expire = datetime.utcnow() + expires_delta
-    to_encode: Dict[str, Any] = {"sub": str(subject), "role": role, "exp": expire}
+    claims["sub"] = str(claims["sub"])
+    claims["role"] = str(claims["role"])
+    claims["exp"] = expire
 
     encoded_jwt = jwt.encode(
-        to_encode,
+        claims,
         settings.jwt_secret_key,
         algorithm=settings.jwt_algorithm,
     )
@@ -96,6 +119,17 @@ def verify_access_token(token: str) -> dict:
         return payload
     except JWTError as exc:  # pragma: no cover - defensive
         raise RuntimeError("Invalid or expired token") from exc
+
+
+def decode_access_token(token: str) -> dict:
+    """
+    Backwards-compatible alias for :func:`verify_access_token`.
+
+    Some services still import ``decode_access_token``; keep this thin
+    wrapper so that those imports continue to work without modification.
+    """
+
+    return verify_access_token(token)
 
 
 def get_password_hash(plain_password: str) -> str:
