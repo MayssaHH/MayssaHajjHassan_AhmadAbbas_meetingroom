@@ -45,7 +45,7 @@ class Settings(BaseSettings):
     database_url: str = "postgresql://postgres:postgres@db:5432/smart_meeting_room"
     jwt_secret_key: str = "CHANGE_ME_IN_PRODUCTION"
     jwt_algorithm: str = "HS256"
-    jwt_access_token_expire_minutes: int = 60
+    access_token_expire_minutes: int = 60
 
     users_service_url: str = "http://users-service:8001"
     rooms_service_url: str = "http://rooms-service:8002"
