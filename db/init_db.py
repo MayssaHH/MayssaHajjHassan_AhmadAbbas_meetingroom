@@ -1,53 +1,46 @@
 """
-db.init_db
-==========
+Database engine and session management.
 
-Database initialization helpers.
-
-This module provides small utility functions that will later be used by
-CLI scripts or service startup hooks to create the database schema.
-
-At this stage it only exposes utilities to create all tables defined in
-:mod:`db.schema`.
+This module creates the SQLAlchemy engine and session factory based on the
+configured database URL. It also exposes a :func:`get_db` dependency that
+can be used in FastAPI routes.
 """
 
-from __future__ import annotations
-
 from sqlalchemy import create_engine
-from sqlalchemy.engine import Engine
+from sqlalchemy.orm import sessionmaker, Session
 
-from .schema import Base
+from common.config import get_settings
+from db.schema import Base
+
+settings = get_settings()
+
+# For SQLite, ``check_same_thread`` is required in some environments.
+connect_args = {}
+if settings.database_url.startswith("sqlite"):
+    connect_args = {"check_same_thread": False}
+
+engine = create_engine(settings.database_url, connect_args=connect_args, future=True)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
-def create_engine_for_url(database_url: str) -> Engine:
+def init_db() -> None:
     """
-    Build a SQLAlchemy :class:`~sqlalchemy.engine.Engine` for the given URL.
-
-    Parameters
-    ----------
-    database_url:
-        Full SQLAlchemy connection string, e.g.
-        ``postgresql://user:password@host:5432/dbname``.
-
-    Returns
-    -------
-    Engine
-        Configured SQLAlchemy engine instance.
+    Create all database tables if they do not already exist.
     """
-    return create_engine(database_url, future=True)
-
-
-def init_db(database_url: str) -> None:
-    """
-    Create all database tables defined in :mod:`db.schema`.
-
-    This helper is intentionally small and synchronous so that it can be
-    reused from service startup code or from one-off migration scripts.
-
-    Parameters
-    ----------
-    database_url:
-        Database connection string for the target database.
-    """
-    engine = create_engine_for_url(database_url)
     Base.metadata.create_all(bind=engine)
+
+
+def get_db() -> Session:
+    """
+    FastAPI dependency that yields a database session.
+
+    Yields
+    ------
+    Session
+        A SQLAlchemy session tied to the current request.
+    """
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()

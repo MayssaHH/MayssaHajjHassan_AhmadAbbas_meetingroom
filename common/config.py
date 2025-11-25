@@ -11,9 +11,8 @@ Settings are loaded from process environment variables and an optional
 """
 
 from __future__ import annotations
-
+from functools import lru_cache
 from pydantic_settings import BaseSettings
-from pydantic import ConfigDict
 
 class Settings(BaseSettings):
     """
@@ -67,5 +66,14 @@ class Settings(BaseSettings):
         env_file_encoding = "utf-8"
 
 
-#: Singleton settings instance to be reused by importing modules.
-settings = Settings()
+@lru_cache(maxsize=1)
+def get_settings() -> Settings:
+    """
+    Return a cached instance of :class:`Settings`.
+
+    Returns
+    -------
+    Settings
+        The singleton settings instance.
+    """
+    return Settings()

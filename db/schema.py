@@ -101,11 +101,11 @@ class Room(Base):
     __tablename__ = "rooms"
 
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(100), unique=True, nullable=False)
+    name = Column(String(100), unique=True, nullable=False, index=True)
     capacity = Column(Integer, nullable=False)
     equipment = Column(Text, nullable=True)
-    location = Column(String(100), nullable=False)
-    status = Column(String(30), nullable=False, default="active")
+    location = Column(String(255), nullable=True)
+    status = Column(String(50), nullable=False, default="active")
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
 
     bookings = relationship("Booking", back_populates="room", cascade="all, delete-orphan")
@@ -180,13 +180,13 @@ class Review(Base):
     __tablename__ = "reviews"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
-    room_id = Column(Integer, ForeignKey("rooms.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    room_id = Column(Integer, ForeignKey("rooms.id"), nullable=False, index=True)
     rating = Column(Integer, nullable=False)
     comment = Column(Text, nullable=True)
-    flagged = Column(Boolean, nullable=False, default=False)
-    created_at = Column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime(timezone=True), nullable=True)
-
+    flagged = Column(Boolean, default=False, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    
     user = relationship("User", back_populates="reviews")
     room = relationship("Room", back_populates="reviews")
