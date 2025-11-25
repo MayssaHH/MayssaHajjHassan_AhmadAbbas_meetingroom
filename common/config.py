@@ -13,7 +13,7 @@ Settings are loaded from process environment variables and an optional
 from __future__ import annotations
 
 from pydantic_settings import BaseSettings
-
+from pydantic import ConfigDict
 
 class Settings(BaseSettings):
     """
@@ -45,7 +45,7 @@ class Settings(BaseSettings):
     database_url: str = "postgresql://postgres:postgres@db:5432/smart_meeting_room"
     jwt_secret_key: str = "CHANGE_ME_IN_PRODUCTION"
     jwt_algorithm: str = "HS256"
-    access_token_expire_minutes: int = 60
+    jwt_access_token_expire_minutes: int = 60
 
     users_service_url: str = "http://users-service:8001"
     rooms_service_url: str = "http://rooms-service:8002"

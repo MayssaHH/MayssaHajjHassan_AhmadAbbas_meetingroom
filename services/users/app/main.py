@@ -1,0 +1,40 @@
+"""
+Users service application entrypoint.
+
+This module exposes the FastAPI application instance for the Users service.
+Other parts of the system (e.g., the ASGI server, Docker) will import the
+``app`` object from here in order to run the service.
+"""
+
+from fastapi import FastAPI
+
+from .routers import auth_routes, users_routes, admin_routes
+
+
+app = FastAPI(
+    title="Users Service",
+    description=(
+        "Microservice responsible for user registration, authentication, "
+        "profile management, roles, and exposing booking history via "
+        "inter-service communication with the Bookings service."
+    ),
+    version="0.1.0",
+)
+
+
+@app.get("/health", tags=["health"])
+def health_check() -> dict:
+    """
+    Simple health-check endpoint.
+
+    Returns
+    -------
+    dict
+        A small JSON payload indicating that the Users service is alive.
+    """
+    return {"status": "ok", "service": "users"}
+
+
+app.include_router(auth_routes.router, prefix="/users", tags=["auth"])
+app.include_router(users_routes.router, prefix="/users", tags=["users"])
+app.include_router(admin_routes.router, prefix="/admin/users", tags=["admin-users"])
