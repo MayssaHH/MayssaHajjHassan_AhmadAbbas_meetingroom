@@ -1,21 +1,133 @@
 """
-Additional smoke tests for the Users service.
+Tests for user-management endpoints that go beyond authentication.
 
-These tests will be extended in later commits to cover:
+These tests verify that:
 
-* Listing users.
-* Access control and role-based restrictions.
-* Profile update and deletion operations.
+* Listing users is restricted to admins.
+* A user can update his/her own profile.
+* Non-admin users cannot change another user's role.
+* Admin users can change roles for other users.
 """
 
+from __future__ import annotations
 
-def test_placeholder() -> None:
-    """
-    Placeholder test to keep the test module non-empty.
+from typing import Dict
 
-    Notes
-    -----
-    Real functional tests will be added once the corresponding endpoints
-    are implemented.
+from fastapi.testclient import TestClient
+
+
+def _register_user(
+    client: TestClient,
+    *,
+    username: str,
+    role: str = "regular",
+) -> Dict:
     """
-    assert True
+    Helper to register a user with a given role.
+    """
+    payload = {
+        "name": f"{username.capitalize()} Example",
+        "username": username,
+        "email": f"{username}@example.com",
+        "password": "password123",
+        "role": role,
+    }
+    response = client.post("/users/register", json=payload)
+    assert response.status_code in (200, 201)
+    return response.json()
+
+
+def _login(client: TestClient, username: str, password: str = "password123") -> str:
+    """
+    Helper to log in a user and return the access token.
+    """
+    response = client.post(
+        "/users/login",
+        json={"username": username, "password": password},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    return data["access_token"]
+
+
+def test_list_users_admin_only(client: TestClient) -> None:
+    """
+    Only admin users should be allowed to list all users.
+    """
+    _register_user(client, username="admin", role="admin")
+    _register_user(client, username="bob", role="regular")
+
+    # Admin call
+    admin_token = _login(client, "admin")
+    admin_headers = {"Authorization": f"Bearer {admin_token}"}
+    admin_response = client.get("/users", headers=admin_headers)
+    assert admin_response.status_code == 200
+    users = admin_response.json()
+    assert isinstance(users, list)
+    assert any(u["username"] == "admin" for u in users)
+
+    # Regular user call
+    regular_token = _login(client, "bob")
+    regular_headers = {"Authorization": f"Bearer {regular_token}"}
+    regular_response = client.get("/users", headers=regular_headers)
+    # Either 401 or 403 is acceptable for "not allowed".
+    assert regular_response.status_code in (401, 403)
+
+
+def test_update_own_profile_works(client: TestClient) -> None:
+    """
+    A regular user can update his/her own profile via ``/users/me``.
+    """
+    _register_user(client, username="carol", role="regular")
+    token = _login(client, "carol")
+    headers = {"Authorization": f"Bearer {token}"}
+
+    update_payload = {
+        "name": "Carol Updated",
+        "email": "carol.updated@example.com",
+    }
+    response = client.put("/users/me", json=update_payload, headers=headers)
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["name"] == "Carol Updated"
+    assert data["email"] == "carol.updated@example.com"
+
+
+def test_non_admin_cannot_change_other_user_role(client: TestClient) -> None:
+    """
+    A non-admin user must not be able to change someone else's role.
+    """
+    _register_user(client, username="dave", role="regular")
+    target = _register_user(client, username="erin", role="regular")
+
+    user_token = _login(client, "dave")
+    headers = {"Authorization": f"Bearer {user_token}"}
+
+    response = client.patch(
+        f"/users/{target['id']}/role",
+        json={"role": "admin"},
+        headers=headers,
+    )
+    assert response.status_code in (401, 403)
+
+
+def test_admin_can_change_user_role(client: TestClient) -> None:
+    """
+    An admin user can change another user's role.
+    """
+    _register_user(client, username="superadmin", role="admin")
+    target = _register_user(client, username="frank", role="regular")
+
+    admin_token = _login(client, "superadmin")
+    headers = {"Authorization": f"Bearer {admin_token}"}
+
+    response = client.patch(
+        f"/users/{target['id']}/role",
+        json={"role": "moderator"},
+        headers=headers,
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["role"] == "moderator"
