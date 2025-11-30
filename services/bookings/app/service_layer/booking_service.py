@@ -17,7 +17,12 @@ from sqlalchemy.orm import Session
 
 from db.schema import Booking, Room, User
 from services.bookings.app.repository import booking_repository
+from services.bookings.app.clients import users_client, rooms_client
 from common.exceptions import BadRequestError, ConflictError, ForbiddenError, NotFoundError
+from common.notifications import send_booking_created_notification, send_booking_cancelled_notification
+from common.logging_utils import get_logger
+
+_logger = get_logger(__name__)
 
 
 MIN_DURATION = timedelta(minutes=5)
@@ -111,6 +116,41 @@ def create_booking(
             c.status = "cancelled"
             db.add(c)
         db.commit()
+        
+        # Send cancellation notifications for force-cancelled bookings
+        for cancelled_booking in conflicts:
+            try:
+                user_data = users_client.get_user(cancelled_booking.user_id)
+                room_data = rooms_client.get_room(cancelled_booking.room_id)
+                
+                if user_data and room_data:
+                    user_email = user_data.get("email")
+                    room_name = room_data.get("name")
+                    
+                    if user_email and room_name:
+                        send_booking_cancelled_notification(
+                            user_email=user_email,
+                            room_name=room_name,
+                            start_time=cancelled_booking.start_time,
+                            end_time=cancelled_booking.end_time,
+                        )
+                    else:
+                        _logger.warning(
+                            "Cannot send force-cancellation notification: missing email or room name for booking %s",
+                            cancelled_booking.id,
+                        )
+                else:
+                    _logger.warning(
+                        "Cannot send force-cancellation notification: failed to fetch user or room data for booking %s",
+                        cancelled_booking.id,
+                    )
+            except Exception as exc:
+                # Log but don't raise - notification failure should not break booking flow
+                _logger.exception(
+                    "Failed to send force-cancellation notification for booking %s: %s",
+                    cancelled_booking.id,
+                    exc,
+                )
 
     booking = booking_repository.create_booking(
         db,
@@ -120,6 +160,41 @@ def create_booking(
         end_time=end_time,
         status="confirmed",
     )
+    
+    # Send notification after booking is successfully created
+    try:
+        user_data = users_client.get_user(user_id)
+        room_data = rooms_client.get_room(room_id)
+        
+        if user_data and room_data:
+            user_email = user_data.get("email")
+            room_name = room_data.get("name")
+            
+            if user_email and room_name:
+                send_booking_created_notification(
+                    user_email=user_email,
+                    room_name=room_name,
+                    start_time=booking.start_time,
+                    end_time=booking.end_time,
+                )
+            else:
+                _logger.warning(
+                    "Cannot send notification: missing email or room name for booking %s",
+                    booking.id,
+                )
+        else:
+            _logger.warning(
+                "Cannot send notification: failed to fetch user or room data for booking %s",
+                booking.id,
+            )
+    except Exception as exc:
+        # Log but don't raise - notification failure should not break booking flow
+        _logger.exception(
+            "Failed to send booking created notification for booking %s: %s",
+            booking.id,
+            exc,
+        )
+    
     return booking
 
 
@@ -288,7 +363,43 @@ def cancel_booking(
 
     if booking.status != "cancelled":
         booking.status = "cancelled"
-        return booking_repository.save_booking(db, booking)
+        cancelled_booking = booking_repository.save_booking(db, booking)
+        
+        # Send notification after booking is successfully cancelled
+        try:
+            user_data = users_client.get_user(booking.user_id)
+            room_data = rooms_client.get_room(booking.room_id)
+            
+            if user_data and room_data:
+                user_email = user_data.get("email")
+                room_name = room_data.get("name")
+                
+                if user_email and room_name:
+                    send_booking_cancelled_notification(
+                        user_email=user_email,
+                        room_name=room_name,
+                        start_time=booking.start_time,
+                        end_time=booking.end_time,
+                    )
+                else:
+                    _logger.warning(
+                        "Cannot send cancellation notification: missing email or room name for booking %s",
+                        booking.id,
+                    )
+            else:
+                _logger.warning(
+                    "Cannot send cancellation notification: failed to fetch user or room data for booking %s",
+                    booking.id,
+                )
+        except Exception as exc:
+            # Log but don't raise - notification failure should not break cancellation flow
+            _logger.exception(
+                "Failed to send booking cancelled notification for booking %s: %s",
+                booking.id,
+                exc,
+            )
+        
+        return cancelled_booking
     return booking
 def _ensure_room_is_active(db: Session, room_id: int) -> None:
     """
