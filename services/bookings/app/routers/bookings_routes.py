@@ -40,26 +40,15 @@ def create_booking(
     with existing bookings for the same room. If a conflict is detected,
     a 409 response is returned.
     """
-    try:
-        booking = booking_service.create_booking(
-            db,
-            user_id=current_user.id,
-            role=current_user.role,
-            room_id=payload.room_id,
-            start_time=payload.start_time,
-            end_time=payload.end_time,
-            force_override=False,
-        )
-    except ValueError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(exc),
-        )
-    except booking_service.BookingConflictError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=str(exc),
-        )
+    booking = booking_service.create_booking(
+        db,
+        user_id=current_user.id,
+        role=current_user.role,
+        room_id=payload.room_id,
+        start_time=payload.start_time,
+        end_time=payload.end_time,
+        force_override=False,
+    )
 
     return booking
 
@@ -110,30 +99,14 @@ def update_my_booking(
             detail="Both start_time and end_time must be provided.",
         )
 
-    try:
-        booking = booking_service.update_booking_time(
-            db,
-            booking_id=booking_id,
-            caller_user_id=current_user.id,
-            caller_role=current_user.role,
-            start_time=payload.start_time,
-            end_time=payload.end_time,
-        )
-    except ValueError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(exc),
-        )
-    except booking_service.BookingPermissionError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=str(exc),
-        )
-    except booking_service.BookingConflictError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=str(exc),
-        )
+    booking = booking_service.update_booking_time(
+        db,
+        booking_id=booking_id,
+        caller_user_id=current_user.id,
+        caller_role=current_user.role,
+        start_time=payload.start_time,
+        end_time=payload.end_time,
+    )
 
     return booking
 
@@ -152,24 +125,13 @@ def cancel_my_booking(
 
     This is implemented as a soft delete by setting ``status='cancelled'``.
     """
-    try:
-        booking_service.cancel_booking(
-            db,
-            booking_id=booking_id,
-            caller_user_id=current_user.id,
-            caller_role=current_user.role,
-            force=False,
-        )
-    except ValueError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(exc),
-        )
-    except booking_service.BookingPermissionError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=str(exc),
-        )
+    booking_service.cancel_booking(
+        db,
+        booking_id=booking_id,
+        caller_user_id=current_user.id,
+        caller_role=current_user.role,
+        force=False,
+    )
     return None
 
 

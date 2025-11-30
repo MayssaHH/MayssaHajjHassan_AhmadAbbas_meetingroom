@@ -17,6 +17,7 @@ page and a placeholder for the Users service.
    rooms_service
    bookings_service
    reviews_service
+   error_validation
 
 .. toctree::
    :maxdepth: 2

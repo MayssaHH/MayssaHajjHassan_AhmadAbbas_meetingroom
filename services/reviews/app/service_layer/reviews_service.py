@@ -22,6 +22,7 @@ from ..repository import reviews_repository
 from ..clients import users_client, rooms_client, bookings_client
 from db.schema import Review
 from common.config import get_settings
+from common.exceptions import BadRequestError, NotFoundError, ForbiddenError
 
 
 _HTML_TAG_RE = re.compile(r"<[^>]+>")
@@ -72,22 +73,22 @@ def create_review(
     """
     settings = get_settings()
     if not users_client.ensure_user_exists(author_user_id):
-        raise ValueError("User does not exist.")
+        raise NotFoundError("User does not exist.", error_code="USER_NOT_FOUND")
 
     if not rooms_client.ensure_room_is_active(payload.room_id):
-        raise ValueError("Room is not active or does not exist.")
+        raise NotFoundError("Room is not active or does not exist.", error_code="ROOM_NOT_FOUND")
 
     # Optional business rule: user must have at least one booking
     if settings.require_booking_for_review and not bookings_client.user_has_booking_for_room(
         author_user_id, payload.room_id
     ):
-        raise ValueError("A booking is required to review this room.")
+        raise ForbiddenError("A booking is required to review this room.", error_code="BOOKING_REQUIRED_FOR_REVIEW")
 
     comment = _sanitize_comment(payload.comment)
     if not comment:
-        raise ValueError("Comment cannot be empty after sanitization.")
+        raise BadRequestError("Comment cannot be empty after sanitization.", error_code="INVALID_COMMENT")
     if _contains_profanity(comment):
-        raise ValueError("Comment contains inappropriate language.")
+        raise BadRequestError("Comment contains inappropriate language.", error_code="INVALID_COMMENT")
 
     review = reviews_repository.create_review(
         db,
@@ -117,7 +118,7 @@ def update_review(
     if payload.comment is not None:
         sanitized = _sanitize_comment(payload.comment)
         if not sanitized:
-            raise ValueError("Comment cannot be empty after sanitization.")
+            raise BadRequestError("Comment cannot be empty after sanitization.", error_code="INVALID_COMMENT")
         review.comment = sanitized
 
     review = reviews_repository.save_review(db, review)

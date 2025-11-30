@@ -32,20 +32,14 @@ def register_user(
     UserRead
         The created user (without password).
     """
-    try:
-        user: User = user_service.register_user(
-            db,
-            name=payload.name,
-            username=payload.username,
-            email=payload.email,
-            password=payload.password,
-            role=payload.role,
-        )
-    except ValueError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(exc),
-        )
+    user: User = user_service.register_user(
+        db,
+        name=payload.name,
+        username=payload.username,
+        email=payload.email,
+        password=payload.password,
+        role=payload.role,
+    )
     return user
 
 
@@ -62,17 +56,11 @@ def login_user(
     TokenResponse
         A JWT access token and token type.
     """
-    try:
-        user = user_service.authenticate_user(
-            db,
-            username=payload.username,
-            password=payload.password,
-        )
-    except ValueError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=str(exc),
-        )
+    user = user_service.authenticate_user(
+        db,
+        username=payload.username,
+        password=payload.password,
+    )
 
     token = user_service.create_user_access_token(user)
     return schemas.TokenResponse(access_token=token, token_type="bearer")

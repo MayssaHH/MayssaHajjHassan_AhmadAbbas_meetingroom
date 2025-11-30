@@ -17,24 +17,11 @@ from sqlalchemy.orm import Session
 
 from db.schema import Booking, Room, User
 from services.bookings.app.repository import booking_repository
+from common.exceptions import BadRequestError, ConflictError, ForbiddenError, NotFoundError
 
 
 MIN_DURATION = timedelta(minutes=5)
 MAX_DURATION = timedelta(hours=24)
-
-
-class BookingConflictError(Exception):
-    """
-    Raised when a new or updated booking conflicts with existing ones
-    and the caller did not request an administrative override.
-    """
-
-
-class BookingPermissionError(Exception):
-    """
-    Raised when a user attempts to modify a booking they do not own and
-    without sufficient administrative privileges.
-    """
 
 
 def _normalize_and_validate_time_range(start_time: datetime, end_time: datetime) -> tuple[datetime, datetime]:
@@ -47,13 +34,13 @@ def _normalize_and_validate_time_range(start_time: datetime, end_time: datetime)
         end_time = end_time.replace(tzinfo=timezone.utc)
 
     if start_time >= end_time:
-        raise ValueError("start_time must be strictly before end_time.")
+        raise BadRequestError("start_time must be strictly before end_time.", error_code="INVALID_TIME_RANGE")
 
     duration = end_time - start_time
     if duration < MIN_DURATION:
-        raise ValueError("Booking duration is too short.")
+        raise BadRequestError("Booking duration is too short.", error_code="INVALID_TIME_RANGE")
     if duration > MAX_DURATION:
-        raise ValueError("Booking duration exceeds the allowed maximum.")
+        raise BadRequestError("Booking duration exceeds the allowed maximum.", error_code="INVALID_TIME_RANGE")
     return start_time, end_time
 
 
@@ -90,12 +77,6 @@ def create_booking(
         creating the new booking. This flag is reserved for administrative
         roles and is expected to be gated at the API layer.
 
-    Raises
-    ------
-    ValueError
-        If the time range is invalid.
-    BookingConflictError
-        If a conflict exists and ``force_override`` is False.
     """
     start_time, end_time = _normalize_and_validate_time_range(start_time, end_time)
     _ensure_user_exists(db, user_id)
@@ -109,9 +90,7 @@ def create_booking(
     )
 
     if conflicts and not force_override:
-        raise BookingConflictError(
-            "The room is already booked in the requested time range."
-        )
+        raise ConflictError("The room is already booked in the requested time range.", error_code="BOOKING_CONFLICT")
 
     if conflicts and force_override:
         # Administrative override: mark conflicting bookings as cancelled.
@@ -207,15 +186,13 @@ def update_booking_time(
 
     booking = booking_repository.get_booking_by_id(db, booking_id)
     if booking is None:
-        raise ValueError("Booking not found.")
+        raise NotFoundError("Booking not found.", error_code="BOOKING_NOT_FOUND")
 
     is_owner = booking.user_id == caller_user_id
     is_admin_like = caller_role == "admin"
 
     if not (is_owner or is_admin_like):
-        raise BookingPermissionError(
-            "You are not allowed to modify this booking."
-        )
+        raise ForbiddenError("You are not allowed to modify this booking.", error_code="NOT_OWNER")
 
     conflicts = booking_repository.find_conflicting_bookings(
         db,
@@ -225,9 +202,7 @@ def update_booking_time(
         exclude_booking_id=booking.id,
     )
     if conflicts:
-        raise BookingConflictError(
-            "The new time range conflicts with an existing booking."
-        )
+        raise ConflictError("The new time range conflicts with an existing booking.", error_code="BOOKING_CONFLICT")
 
     booking.start_time = start_time
     booking.end_time = end_time
@@ -258,21 +233,17 @@ def cancel_booking(
     """
     booking = booking_repository.get_booking_by_id(db, booking_id)
     if booking is None:
-        raise ValueError("Booking not found.")
+        raise NotFoundError("Booking not found.", error_code="BOOKING_NOT_FOUND")
 
     is_owner = booking.user_id == caller_user_id
     is_admin_like = caller_role == "admin"
 
     if force:
         if not is_admin_like:
-            raise BookingPermissionError(
-                "Only administrators may force-cancel bookings."
-            )
+            raise ForbiddenError("Only administrators may force-cancel bookings.", error_code="NOT_OWNER")
     else:
         if not is_owner:
-            raise BookingPermissionError(
-                "You are not allowed to cancel this booking."
-            )
+            raise ForbiddenError("You are not allowed to cancel this booking.", error_code="NOT_OWNER")
 
     if booking.status != "cancelled":
         booking.status = "cancelled"
@@ -284,9 +255,9 @@ def _ensure_room_is_active(db: Session, room_id: int) -> None:
     """
     room = db.get(Room, room_id)
     if room is None:
-        raise ValueError("Room does not exist.")
+        raise NotFoundError("Room does not exist.", error_code="ROOM_NOT_FOUND")
     if getattr(room, "status", "active") != "active":
-        raise ValueError("Room is not active.")
+        raise BadRequestError("Room is not active.", error_code="ROOM_INACTIVE")
 
 
 def _ensure_user_exists(db: Session, user_id: int) -> None:
@@ -294,4 +265,4 @@ def _ensure_user_exists(db: Session, user_id: int) -> None:
     Ensure the user making the booking exists.
     """
     if db.get(User, user_id) is None:
-        raise ValueError("User does not exist.")
+        raise NotFoundError("User does not exist.", error_code="USER_NOT_FOUND")

@@ -13,12 +13,13 @@ wired to real implementations in later commits.
 
 from typing import Callable, Generator, List
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
 from common.auth import verify_access_token
 from common.rbac import is_role_allowed, ROLE_SERVICE_ACCOUNT
+from common.exceptions import UnauthorizedError, ForbiddenError
 from db.init_db import get_db as _get_db
 from db.schema import User
 
@@ -64,19 +65,13 @@ def get_current_user(
     try:
         payload = verify_access_token(token)
     except RuntimeError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Could not validate credentials.",
-        )
+        raise UnauthorizedError("Could not validate credentials.")
 
     subject = payload.get("sub")
     role = payload.get("role")
 
     if subject is None or role is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Malformed token payload.",
-        )
+        raise UnauthorizedError("Malformed token payload.")
 
     if role == ROLE_SERVICE_ACCOUNT:
         # Synthetic user for inter-service calls; not persisted.
@@ -92,10 +87,7 @@ def get_current_user(
 
     user = db.get(User, int(subject))
     if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found.",
-        )
+        raise UnauthorizedError("User not found.")
     return user
 
 
@@ -116,10 +108,7 @@ def require_roles(allowed_roles: List[str]) -> Callable[[User], User]:
 
     def dependency(current_user: User = Depends(get_current_user)) -> User:
         if not is_role_allowed(current_user.role, allowed_roles):
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Insufficient permissions.",
-            )
+            raise ForbiddenError("Insufficient permissions.")
         return current_user
 
     return dependency

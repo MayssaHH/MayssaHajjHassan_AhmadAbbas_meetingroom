@@ -14,6 +14,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from common.rbac import ROLE_ADMIN, ROLE_AUDITOR, ROLE_SERVICE_ACCOUNT
+from common.exceptions import BadRequestError, NotFoundError
 from db.schema import User
 from services.users.app import schemas
 from services.users.app.service_layer import user_service
@@ -52,10 +53,7 @@ def get_user_by_username(
     """
     user = user_repository.get_user_by_username(db, username=username)
     if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found.",
-        )
+        raise NotFoundError("User not found.", error_code="USER_NOT_FOUND")
     return user
 
 
@@ -70,10 +68,7 @@ def get_user_by_id(
     """
     user = user_repository.get_user_by_id(db, user_id)
     if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found.",
-        )
+        raise NotFoundError("User not found.", error_code="USER_NOT_FOUND")
     return user
 
 
@@ -88,18 +83,12 @@ def update_current_user(
     """
     if payload.username is not None:
         if user_repository.get_user_by_username(db, username=payload.username):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Username is already taken.",
-            )
+            raise BadRequestError("Username is already taken.", error_code="USER_ALREADY_EXISTS")
         current_user.username = payload.username
 
     if payload.email is not None:
         if user_repository.get_user_by_email(db, email=payload.email):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Email is already in use.",
-            )
+            raise BadRequestError("Email is already in use.", error_code="USER_ALREADY_EXISTS")
         current_user.email = payload.email
 
     if payload.name is not None:
@@ -130,11 +119,5 @@ def change_password(
     """
     Change the current user's password.
     """
-    try:
-        user_service.change_password(db, current_user, new_password)
-    except ValueError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(exc),
-        )
+    user_service.change_password(db, current_user, new_password)
     return None

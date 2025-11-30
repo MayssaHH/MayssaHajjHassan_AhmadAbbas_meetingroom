@@ -159,3 +159,13 @@ Access control rules:
   - Have full moderation capabilities.
   - May additionally view audit information, depending on the overall RBAC
     configuration.
+
+Error Handling and Validation
+-----------------------------
+
+This service uses the shared error schema (:doc:`error_validation`).
+Typical error codes include:
+
+- ``INVALID_RATING`` / ``INVALID_COMMENT``
+- ``REVIEW_NOT_FOUND``
+- ``NOT_OWNER`` for unauthorized edits/deletes

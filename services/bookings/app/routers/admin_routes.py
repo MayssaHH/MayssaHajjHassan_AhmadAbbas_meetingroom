@@ -67,21 +67,15 @@ def create_booking_with_override(
     administrators and is a concrete implementation of the "override
     conflicts" requirement.
     """
-    try:
-        booking = booking_service.create_booking(
-            db,
-            user_id=current_user.id,
-            role=current_user.role,
-            room_id=payload.room_id,
-            start_time=payload.start_time,
-            end_time=payload.end_time,
-            force_override=True,
-        )
-    except ValueError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(exc),
-        )
+    booking = booking_service.create_booking(
+        db,
+        user_id=current_user.id,
+        role=current_user.role,
+        room_id=payload.room_id,
+        start_time=payload.start_time,
+        end_time=payload.end_time,
+        force_override=True,
+    )
 
     return booking
 
@@ -102,24 +96,13 @@ def force_cancel_booking(
     This endpoint is meant to model administrative resolution of conflicts
     and stuck states.
     """
-    try:
-        booking = booking_service.cancel_booking(
-            db,
-            booking_id=booking_id,
-            caller_user_id=current_user.id,
-            caller_role=current_user.role,
-            force=True,
-        )
-    except ValueError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(exc),
-        )
-    except booking_service.BookingPermissionError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=str(exc),
-        )
+    booking = booking_service.cancel_booking(
+        db,
+        booking_id=booking_id,
+        caller_user_id=current_user.id,
+        caller_role=current_user.role,
+        force=True,
+    )
     return booking
 
 

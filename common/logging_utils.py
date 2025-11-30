@@ -50,3 +50,10 @@ def get_logger(name: Optional[str] = None) -> logging.Logger:
         Configured logger instance.
     """
     return logging.getLogger(name)
+
+
+def log_error(logger: logging.Logger, *, service_name: str, path: str, method: str, error_code: str, message: str) -> None:
+    """
+    Lightweight error logger used by global exception handlers.
+    """
+    logger.error("%s | %s %s | %s | %s", service_name, method, path, error_code, message)

@@ -2,48 +2,62 @@
 common.exceptions
 =================
 
-Custom exception hierarchy for the Smart Meeting Room backend.
-
-Using explicit exception classes makes it easier to apply consistent
-error handling and to map internal failures to well-structured HTTP
-responses in the API layer.
+Custom exception hierarchy and helpers for consistent error responses.
 """
 
 from __future__ import annotations
 
+from dataclasses import dataclass, field
+from typing import Any, Dict, Optional
 
+
+@dataclass
 class AppError(Exception):
     """
-    Base class for all custom application errors.
+    Base class for all application errors.
 
-    Subclasses represent specific failure modes that will later be
-    translated into explicit HTTP error responses by the API layer.
+    Each error carries an HTTP status code, machine-friendly error_code,
+    human-readable message, and optional details.
     """
 
+    http_status: int
+    error_code: str
+    message: str
+    details: Optional[Dict[str, Any]] = field(default=None)
 
-class NotFoundError(AppError):
-    """
-    Raised when a requested entity does not exist in the database.
-    """
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "error_code": self.error_code,
+            "message": self.message,
+            "details": self.details or None,
+        }
 
 
-class ConflictError(AppError):
-    """
-    Raised when a requested operation conflicts with existing state.
-
-    Typical use cases include overlapping room bookings or attempts to
-    create duplicate resources that must be unique.
-    """
+class BadRequestError(AppError):
+    def __init__(self, message: str, *, error_code: str = "VALIDATION_ERROR", details: Optional[Dict[str, Any]] = None):
+        super().__init__(http_status=400, error_code=error_code, message=message, details=details)
 
 
 class UnauthorizedError(AppError):
-    """
-    Raised when authentication fails or is missing entirely.
-    """
+    def __init__(self, message: str = "Unauthorized", *, error_code: str = "UNAUTHORIZED", details: Optional[Dict[str, Any]] = None):
+        super().__init__(http_status=401, error_code=error_code, message=message, details=details)
 
 
 class ForbiddenError(AppError):
-    """
-    Raised when the current user is authenticated but lacks permission
-    to perform an operation.
-    """
+    def __init__(self, message: str = "Forbidden", *, error_code: str = "FORBIDDEN", details: Optional[Dict[str, Any]] = None):
+        super().__init__(http_status=403, error_code=error_code, message=message, details=details)
+
+
+class NotFoundError(AppError):
+    def __init__(self, message: str = "Not found", *, error_code: str = "NOT_FOUND", details: Optional[Dict[str, Any]] = None):
+        super().__init__(http_status=404, error_code=error_code, message=message, details=details)
+
+
+class ConflictError(AppError):
+    def __init__(self, message: str = "Conflict", *, error_code: str = "CONFLICT", details: Optional[Dict[str, Any]] = None):
+        super().__init__(http_status=409, error_code=error_code, message=message, details=details)
+
+
+class InternalServerError(AppError):
+    def __init__(self, message: str = "An unexpected error occurred.", *, details: Optional[Dict[str, Any]] = None):
+        super().__init__(http_status=500, error_code="INTERNAL_ERROR", message=message, details=details)

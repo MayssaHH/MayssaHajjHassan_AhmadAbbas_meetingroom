@@ -10,7 +10,7 @@ This module wires:
 
 from typing import Callable, List
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -23,6 +23,7 @@ from common.rbac import (
     ROLE_AUDITOR,
     ROLE_SERVICE_ACCOUNT,
 )
+from common.exceptions import UnauthorizedError, ForbiddenError
 from db.init_db import get_db as _get_db
 
 
@@ -71,19 +72,13 @@ def get_current_user(
     try:
         payload = verify_access_token(token)
     except Exception:  # noqa: BLE001
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid authentication token.",
-        )
+        raise UnauthorizedError("Invalid authentication token.")
 
     user_id = payload.get("sub")
     role = payload.get("role")
 
     if user_id is None or role is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token missing required claims.",
-        )
+        raise UnauthorizedError("Token missing required claims.")
 
     return CurrentUser(id=int(user_id), role=str(role))
 
@@ -106,10 +101,7 @@ def require_roles(allowed_roles: List[str]) -> Callable[[CurrentUser], CurrentUs
 
     def dependency(current_user: CurrentUser = Depends(get_current_user)) -> CurrentUser:
         if not is_role_allowed(current_user.role, allowed_roles):
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Insufficient permissions.",
-            )
+            raise ForbiddenError("Insufficient permissions.")
         return current_user
 
     return dependency

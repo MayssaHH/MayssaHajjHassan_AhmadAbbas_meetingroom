@@ -17,6 +17,7 @@ from ..schemas import RoomCreate, RoomRead, RoomStatusResponse, RoomUpdate
 from ..repository import rooms_repository
 from db.schema import Room
 from ..clients import bookings_client
+from common.exceptions import BadRequestError, NotFoundError
 
 
 def _equipment_list_to_csv(equipment: Optional[list[str]]) -> str:
@@ -44,7 +45,7 @@ def create_room(db: Session, payload: RoomCreate) -> Room:
     name = payload.name.strip()
     location = payload.location.strip()
     if rooms_repository.get_room_by_name(db, name):
-        raise ValueError("Room name is already in use.")
+        raise BadRequestError("Room name is already in use.", error_code="ROOM_ALREADY_EXISTS")
 
     equipment_csv = _equipment_list_to_csv(payload.equipment)
     room = rooms_repository.create_room(
@@ -74,7 +75,7 @@ def update_room(db: Session, room_id: int, payload: RoomUpdate) -> Optional[Room
         new_name = payload.name.strip()
         other = rooms_repository.get_room_by_name(db, new_name)
         if other and other.id != room.id:
-            raise ValueError("Room name is already in use.")
+            raise BadRequestError("Room name is already in use.", error_code="ROOM_ALREADY_EXISTS")
         room.name = new_name
     if payload.location is not None:
         room.location = payload.location.strip()
