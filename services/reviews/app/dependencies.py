@@ -118,3 +118,20 @@ def require_moderator_or_admin(
             detail="You do not have permission to moderate reviews.",
         )
     return user
+
+
+def require_admin_only(
+    user: CurrentUser = Depends(get_current_user),
+) -> CurrentUser:
+    """
+    Ensure that the caller has the ``admin`` role only.
+
+    This dependency is for admin-only operations like deleting/restoring reviews
+    and viewing all reviews in the system.
+    """
+    if not has_role(user.role, [ROLE_ADMIN]):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="This operation requires admin privileges.",
+        )
+    return user

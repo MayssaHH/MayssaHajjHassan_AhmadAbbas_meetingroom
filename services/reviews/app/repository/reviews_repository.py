@@ -46,6 +46,17 @@ def list_flagged_reviews(db: Session) -> List[Review]:
     )
 
 
+def list_all_reviews(db: Session) -> List[Review]:
+    """
+    Return all reviews in the system ordered by creation time.
+    """
+    return (
+        db.query(Review)
+        .order_by(Review.created_at.desc())
+        .all()
+    )
+
+
 def create_review(
     db: Session,
     *,
@@ -63,6 +74,7 @@ def create_review(
         rating=rating,
         comment=comment,
         is_flagged=False,
+        is_visible=True,
     )
     db.add(review)
     db.commit()

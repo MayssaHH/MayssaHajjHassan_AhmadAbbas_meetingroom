@@ -1,8 +1,11 @@
 """
 HTTP endpoints for review moderation.
 
-These endpoints are restricted to moderators and administrators and
-allow flagging and unflagging of reviews.
+MODERATOR + ADMIN endpoints:
+* Flag and unflag reviews
+* View flagged reviews (reports)
+
+These endpoints are accessible to both moderators and administrators.
 """
 
 from __future__ import annotations
@@ -80,7 +83,10 @@ def list_flagged_reviews(
     _: CurrentUser = Depends(require_moderator_or_admin),
 ):
     """
-    List all reviews that are currently flagged.
+    List all reviews that are currently flagged (reports).
+
+    MODERATOR + ADMIN: View all flagged reviews for moderation review.
+    This is the "reports" view for moderators.
     """
     reviews = reviews_service.list_flagged_reviews(db)
     return reviews

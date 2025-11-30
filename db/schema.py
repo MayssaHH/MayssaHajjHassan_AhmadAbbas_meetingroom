@@ -185,6 +185,7 @@ class Review(Base):
     rating = Column(Integer, nullable=False)
     comment = Column(Text, nullable=True)
     is_flagged = Column(Boolean, default=False, nullable=False)
+    is_visible = Column(Boolean, default=True, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     

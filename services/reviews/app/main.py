@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from fastapi import FastAPI
 
-from .routers import reviews_routes, moderation_routes
+from .routers import reviews_routes, moderation_routes, admin_routes
 
 app = FastAPI(
     title="Smart Meeting Room - Reviews Service",
@@ -18,6 +18,7 @@ app = FastAPI(
 
 app.include_router(reviews_routes.router)
 app.include_router(moderation_routes.router)
+app.include_router(admin_routes.router, prefix="/admin", tags=["admin-reviews"])
 
 
 @app.get("/health", tags=["health"])

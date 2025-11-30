@@ -138,6 +138,13 @@ def list_flagged_reviews(db: Session) -> List[Review]:
     return reviews_repository.list_flagged_reviews(db)
 
 
+def list_all_reviews(db: Session) -> List[Review]:
+    """
+    Return all reviews in the system.
+    """
+    return reviews_repository.list_all_reviews(db)
+
+
 def flag_review(db: Session, review: Review) -> Review:
     """
     Mark the given review as flagged.
@@ -154,12 +161,31 @@ def unflag_review(db: Session, review: Review) -> Review:
     return reviews_repository.save_review(db, review)
 
 
+def hide_review(db: Session, review: Review) -> Review:
+    """
+    Hide the given review from public view.
+    """
+    review.is_visible = False
+    return reviews_repository.save_review(db, review)
+
+
+def show_review(db: Session, review: Review) -> Review:
+    """
+    Make the given review visible to the public.
+    """
+    review.is_visible = True
+    return reviews_repository.save_review(db, review)
+
+
 __all__ = [
     "create_review",
     "update_review",
     "get_review",
     "list_reviews_for_room",
     "list_flagged_reviews",
+    "list_all_reviews",
     "flag_review",
     "unflag_review",
+    "hide_review",
+    "show_review",
 ]

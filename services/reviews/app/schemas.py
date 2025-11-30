@@ -73,6 +73,7 @@ class ReviewRead(BaseModel):
     rating: int
     comment: str
     is_flagged: bool
+    is_visible: bool
     created_at: Optional[datetime] = None
 
     class Config:

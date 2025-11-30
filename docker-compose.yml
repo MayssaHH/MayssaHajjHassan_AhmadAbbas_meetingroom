@@ -13,6 +13,75 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  users-service:
+    build:
+      context: .
+      dockerfile: services/users/dockerfile
+    container_name: users_service
+    ports:
+      - "8001:8001"
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/smart_meeting_room
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  rooms-service:
+    build:
+      context: .
+      dockerfile: services/rooms/Dockerfile
+    container_name: rooms_service
+    ports:
+      - "8002:8002"
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/smart_meeting_room
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  bookings-service:
+    build:
+      context: .
+      dockerfile: services/bookings/Dockerfile
+    container_name: bookings_service
+    ports:
+      - "8003:8003"
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/smart_meeting_room
+    depends_on:
+      db:
+        condition: service_healthy
+      users-service:
+        condition: service_started
+      rooms-service:
+        condition: service_started
+    restart: unless-stopped
+
+  reviews-service:
+    build:
+      context: .
+      dockerfile: services/reviews/Dockerfile
+    container_name: reviews_service
+    ports:
+      - "8004:8004"
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/smart_meeting_room
+    depends_on:
+      db:
+        condition: service_healthy
+      users-service:
+        condition: service_started
+      bookings-service:
+        condition: service_started
+    restart: unless-stopped
 
 volumes:
   postgres_data:
