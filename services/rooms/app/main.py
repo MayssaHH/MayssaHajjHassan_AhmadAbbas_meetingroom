@@ -10,7 +10,6 @@ from __future__ import annotations
 from fastapi import FastAPI
 
 from common.error_handlers import register_error_handlers
-
 from .routers import rooms_routes
 
 app = FastAPI(

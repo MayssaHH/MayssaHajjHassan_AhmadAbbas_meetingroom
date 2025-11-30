@@ -7,11 +7,12 @@ This router covers administrative operations such as:
 * Deleting arbitrary user accounts.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
 from common.rbac import ROLE_ADMIN
+from common.exceptions import NotFoundError, BadRequestError
 from db.schema import User
 from services.users.app.dependencies import get_db, require_roles
 from services.users.app.schemas import RoleLiteral
@@ -44,24 +45,15 @@ def update_user_role(
     """
     user = user_repository.get_user_by_id(db, user_id)
     if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found.",
-        )
+        raise NotFoundError("User not found.", error_code="USER_NOT_FOUND")
 
     try:
         normalized_role = user_service.normalize_role(payload.role)
     except ValueError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(exc),
-        ) from exc
+        raise BadRequestError(str(exc)) from exc
 
     if user.id == current_admin.id and normalized_role != ROLE_ADMIN:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Admins cannot demote themselves.",
-        )
+        raise BadRequestError("Admins cannot demote themselves.")
 
     user.role = normalized_role
     user_repository.save_user(db, user)
@@ -81,10 +73,7 @@ def delete_user_as_admin(
     """
     user = user_repository.get_user_by_id(db, user_id)
     if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found.",
-        )
+        raise NotFoundError("User not found.", error_code="USER_NOT_FOUND")
 
     user_repository.delete_user(db, user)
     return None
@@ -113,15 +102,6 @@ def reset_password(
     """
     user = user_repository.get_user_by_id(db, user_id)
     if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found.",
-        )
-    try:
-        user_service.change_password(db, user, new_password)
-    except ValueError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(exc),
-        )
+        raise NotFoundError("User not found.", error_code="USER_NOT_FOUND")
+    user_service.change_password(db, user, new_password)
     return None

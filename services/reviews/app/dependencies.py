@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from typing import Generator
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
 from sqlalchemy import create_engine
@@ -28,6 +28,8 @@ from common.rbac import (
     ROLE_FACILITY_MANAGER,
     has_role,
 )
+from common.exceptions import UnauthorizedError, ForbiddenError
+from common.rate_limiter import check_rate_limit
 
 # ---------------------------------------------------------------------------
 # Database session factory
@@ -79,20 +81,14 @@ def get_current_user(
     try:
         payload = decode_access_token(token)
     except Exception:  # noqa: BLE001
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid authentication token.",
-        )
+        raise UnauthorizedError("Invalid authentication token.")
 
     user_id = payload.get("sub")
     username = payload.get("username", "")
     role = payload.get("role")
 
     if user_id is None or role is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token missing required claims.",
-        )
+        raise UnauthorizedError("Token missing required claims.")
 
     return CurrentUser(id=int(user_id), username=str(username), role=str(role))
 
@@ -148,10 +144,7 @@ def require_read_access(user: CurrentUser = Depends(get_current_user)) -> Curren
         user.role,
         [ROLE_ADMIN, ROLE_MODERATOR, ROLE_AUDITOR, ROLE_REGULAR, ROLE_FACILITY_MANAGER],
     ):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You do not have permission to view reviews.",
-        )
+        raise ForbiddenError("You do not have permission to view reviews.")
     return user
 
 
@@ -166,7 +159,10 @@ def allow_owner_or_admin_or_moderator(
         return
     if has_role(current.role, [ROLE_ADMIN, ROLE_MODERATOR]):
         return
-    raise HTTPException(
-        status_code=status.HTTP_403_FORBIDDEN,
-        detail="You are not allowed to modify this review.",
-    )
+    raise ForbiddenError("You are not allowed to modify this review.")
+
+
+def rate_limit_by_user(endpoint: str):
+    def _dep(current_user: CurrentUser = Depends(get_current_user)):
+        check_rate_limit(f"{endpoint}:{current_user.id}")
+    return _dep

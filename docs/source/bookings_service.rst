@@ -165,3 +165,14 @@ describing:
 This ``bookings_service.rst`` file summarises the behaviour at a high
 level and will be complemented by Sphinx autodoc for the corresponding
 modules.
+
+Error Handling and Validation
+-----------------------------
+
+This service uses the shared error schema (:doc:`error_validation`).
+Typical error codes include:
+
+* ``INVALID_TIME_RANGE``
+* ``ROOM_NOT_FOUND`` / ``USER_NOT_FOUND`` / ``ROOM_INACTIVE``
+* ``BOOKING_CONFLICT``
+* ``NOT_OWNER`` (for non-owner update/cancel)

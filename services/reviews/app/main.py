@@ -10,8 +10,7 @@ from __future__ import annotations
 from fastapi import FastAPI
 
 from common.error_handlers import register_error_handlers
-
-from .routers import reviews_routes, moderation_routes, admin_routes
+from .routers import reviews_routes, moderation_routes, admin_routes, analytics_routes
 
 app = FastAPI(
     title="Smart Meeting Room - Reviews Service",
@@ -24,6 +23,7 @@ register_error_handlers(app)
 app.include_router(reviews_routes.router)
 app.include_router(moderation_routes.router)
 app.include_router(admin_routes.router, prefix="/admin", tags=["admin-reviews"])
+app.include_router(analytics_routes.router)
 
 
 @app.get("/health", tags=["health"])

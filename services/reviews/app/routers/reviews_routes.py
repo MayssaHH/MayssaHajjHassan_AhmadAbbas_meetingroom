@@ -19,8 +19,10 @@ from ..dependencies import (
     require_authenticated,
     require_read_access,
     allow_owner_or_admin_or_moderator,
+    rate_limit_by_user,
 )
 from common.rbac import ROLE_AUDITOR
+from common.exceptions import ForbiddenError, NotFoundError, BadRequestError
 from ..service_layer import reviews_service
 
 router = APIRouter(prefix="/reviews", tags=["reviews"])
@@ -35,6 +37,7 @@ def create_review(
     payload: schemas.ReviewCreate,
     db: Session = Depends(get_db),
     current_user: CurrentUser = Depends(require_authenticated),
+    _limit = Depends(rate_limit_by_user("create_review")),
 ):
     """
     Create a new review for a room.
@@ -43,21 +46,12 @@ def create_review(
     and sanitized before being stored.
     """
     if current_user.role == ROLE_AUDITOR:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Auditors cannot create reviews.",
-        )
-    try:
-        review = reviews_service.create_review(
-            db,
-            author_user_id=current_user.id,
-            payload=payload,
-        )
-    except ValueError as exc:  # business validation error
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(exc),
-        )
+        raise ForbiddenError("Auditors cannot create reviews.")
+    review = reviews_service.create_review(
+        db,
+        author_user_id=current_user.id,
+        payload=payload,
+    )
     return review
 
 
@@ -97,20 +91,11 @@ def update_review(
     """
     review = reviews_service.get_review(db, review_id)
     if review is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Review not found.",
-        )
+        raise NotFoundError("Review not found.", error_code="REVIEW_NOT_FOUND")
 
     allow_owner_or_admin_or_moderator(review.user_id, current_user)
 
-    try:
-        review = reviews_service.update_review(db, review=review, payload=payload)
-    except ValueError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(exc),
-        )
+    review = reviews_service.update_review(db, review=review, payload=payload)
     return review
 
 
@@ -130,10 +115,7 @@ def delete_review(
     """
     review = reviews_service.get_review(db, review_id)
     if review is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Review not found.",
-        )
+        raise NotFoundError("Review not found.", error_code="REVIEW_NOT_FOUND")
 
     allow_owner_or_admin_or_moderator(review.user_id, current_user)
 

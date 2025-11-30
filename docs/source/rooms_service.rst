@@ -88,3 +88,13 @@ The Rooms service may contact the **Bookings service** to compute dynamic
 availability or to verify whether a room is booked during a specific time
 window. This is typically done through a dedicated technical account
 (*service account*) and secured inter-service APIs.
+
+Error Handling and Validation
+-----------------------------
+
+This service uses the shared error schema (:doc:`error_validation`).
+Typical error codes include:
+
+* ``INVALID_CAPACITY``
+* ``ROOM_ALREADY_EXISTS``
+* ``ROOM_NOT_FOUND``

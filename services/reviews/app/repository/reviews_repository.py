@@ -11,6 +11,7 @@ from __future__ import annotations
 from typing import List, Optional
 
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 
 from db.schema import Review
 
@@ -98,3 +99,33 @@ def delete_review(db: Session, review: Review) -> None:
     """
     db.delete(review)
     db.commit()
+
+
+def list_all_reviews(db: Session) -> List[Review]:
+    """
+    Return all reviews in the system.
+    """
+    return db.query(Review).order_by(Review.created_at.desc()).all()
+
+
+def get_average_rating_by_room(db: Session) -> List[dict]:
+    """
+    Return average rating and review count grouped by room.
+    """
+    rows = (
+        db.query(
+            Review.room_id,
+            func.avg(Review.rating).label("avg_rating"),
+            func.count(Review.id).label("review_count"),
+        )
+        .group_by(Review.room_id)
+        .all()
+    )
+    return [
+        {
+            "room_id": row.room_id,
+            "avg_rating": float(row.avg_rating) if row.avg_rating is not None else 0.0,
+            "review_count": row.review_count,
+        }
+        for row in rows
+    ]

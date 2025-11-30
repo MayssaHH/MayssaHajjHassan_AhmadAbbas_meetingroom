@@ -9,7 +9,6 @@ from fastapi import FastAPI
 from common.error_handlers import register_error_handlers
 from services.users.app.routers import auth_routes, users_routes, admin_routes
 
-
 app = FastAPI(
     title="Users Service",
     description=(
@@ -21,7 +20,6 @@ app = FastAPI(
 
 # Register unified error handlers
 register_error_handlers(app)
-
 
 @app.get("/health", tags=["health"])
 def health_check() -> dict:

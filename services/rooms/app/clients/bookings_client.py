@@ -34,6 +34,7 @@ def is_room_currently_booked(room_id: int, *, start_time: datetime | None = None
         settings.bookings_service_url,
         timeout=settings.http_client_timeout,
         default_headers={"Authorization": f"Bearer {token}"},
+        service_name="bookings",
     )
     try:
         resp = client.get(

@@ -26,6 +26,7 @@ def ensure_user_exists(user_id: int) -> bool:
         settings.users_service_url,
         timeout=settings.http_client_timeout,
         default_headers={"Authorization": f"Bearer {token}"},
+        service_name="users",
     )
     try:
         resp = client.get(f"/users/id/{user_id}")

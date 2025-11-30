@@ -21,6 +21,7 @@ from common.rbac import (
     ROLE_AUDITOR,
     ROLE_SERVICE_ACCOUNT,
 )
+from common.exceptions import BadRequestError, UnauthorizedError, ForbiddenError
 from db.schema import User
 from services.users.app.repository import user_repository
 
@@ -104,9 +105,9 @@ def register_user(
     normalized_role = normalize_role(role)
 
     if user_repository.get_user_by_username(db, username=username):
-        raise ValueError("Username is already taken.")
+        raise BadRequestError("Username is already taken.", error_code="USER_ALREADY_EXISTS")
     if user_repository.get_user_by_email(db, email=email):
-        raise ValueError("Email is already in use.")
+        raise BadRequestError("Email is already in use.", error_code="USER_ALREADY_EXISTS")
 
     hashed_password = get_password_hash(password)
     user = user_repository.create_user(
@@ -145,16 +146,16 @@ def authenticate_user(db: Session, *, username: str, password: str) -> User:
     """
     normalized_username = username.lower()
     if _failed_attempts[normalized_username] >= _MAX_ATTEMPTS:
-        raise ValueError("Too many failed attempts. Try again later.")
+        raise UnauthorizedError("Too many failed attempts.", error_code="ACCOUNT_LOCKED")
 
     user = user_repository.get_user_by_username(db, username=username)
     if user is None:
         _failed_attempts[normalized_username] += 1
-        raise ValueError("Invalid username or password.")
+        raise UnauthorizedError("Invalid username or password.", error_code="INVALID_CREDENTIALS")
 
     if not verify_password(password, user.password_hash):
         _failed_attempts[normalized_username] += 1
-        raise ValueError("Invalid username or password.")
+        raise UnauthorizedError("Invalid username or password.", error_code="INVALID_CREDENTIALS")
 
     _failed_attempts[normalized_username] = 0
     return user

@@ -22,3 +22,13 @@ The Users service is responsible for:
 In the codebase, the Users service will live under
 ``services/users`` and will be implemented using FastAPI, Pydantic
 models, and SQLAlchemy ORM models defined in :mod:`db.schema`.
+
+Error Handling and Validation
+-----------------------------
+
+This service uses the shared error schema (:doc:`error_validation`).
+Typical error codes include:
+
+- ``INVALID_CREDENTIALS`` / ``UNAUTHORIZED``
+- ``USER_ALREADY_EXISTS``
+- ``USER_NOT_FOUND``

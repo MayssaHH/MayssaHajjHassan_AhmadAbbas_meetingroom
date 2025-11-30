@@ -64,6 +64,14 @@ class Settings(BaseSettings):
     client_stub_fallback: bool = True  # allow permissive fallback when downstream unavailable (tests/dev)
     require_booking_for_review: bool = False
 
+    cb_enabled: bool = True
+    cb_failure_threshold: int = 3
+    cb_open_timeout_seconds: int = 30
+    cb_half_open_max_calls: int = 1
+
+    rate_limit_window_sec: int = 60
+    rate_limit_max_requests: int = 10
+
     class Config:
         """
         Pydantic configuration for :class:`Settings`.

@@ -13,7 +13,7 @@ from __future__ import annotations
 
 from typing import Generator
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
 from sqlalchemy import create_engine
@@ -22,6 +22,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from common.auth import verify_access_token
 from common.config import get_settings
 from common.rbac import ROLE_ADMIN, ROLE_FACILITY_MANAGER, has_role
+from common.exceptions import UnauthorizedError, ForbiddenError
 
 # ---------------------------------------------------------------------------
 # Database session factory
@@ -77,10 +78,7 @@ def get_current_user(
     try:
         payload = verify_access_token(token)
     except Exception:  # noqa: BLE001
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid authentication token.",
-        )
+        raise UnauthorizedError("Invalid authentication token.")
 
     user_id = payload.get("sub")
     # Our Users JWT currently sets only "sub" and "role".
@@ -89,10 +87,7 @@ def get_current_user(
     role = payload.get("role")
 
     if user_id is None or role is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token missing required claims.",
-        )
+        raise UnauthorizedError("Token missing required claims.")
 
     return CurrentUser(id=int(user_id), username=str(username), role=str(role))
 
@@ -106,8 +101,5 @@ def require_room_manager(current_user: CurrentUser = Depends(get_current_user)) 
     to room management personnel.
     """
     if not has_role(current_user.role, [ROLE_ADMIN, ROLE_FACILITY_MANAGER]):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You do not have permission to manage rooms.",
-        )
+        raise ForbiddenError("You do not have permission to manage rooms.")
     return current_user
