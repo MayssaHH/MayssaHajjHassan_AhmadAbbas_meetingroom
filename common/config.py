@@ -40,6 +40,14 @@ class Settings(BaseSettings):
     service_account_username, service_account_password:
         Credentials for the dedicated ``service_account`` user that will
         be used for inter-service calls.
+    notifications_enabled:
+        Whether notification functionality is enabled.
+    sendgrid_api_key:
+        SendGrid API key for email notifications (if using SendGrid provider).
+    sendgrid_from_email:
+        Email address to use as the sender for notifications.
+    notifications_provider:
+        Notification provider to use: "sendgrid" or "mock" (default: "sendgrid").
     """
 
     database_url: str = "postgresql://postgres:postgres@db:5432/smart_meeting_room"
@@ -71,6 +79,12 @@ class Settings(BaseSettings):
 
     rate_limit_window_sec: int = 60
     rate_limit_max_requests: int = 10
+
+    # Notification settings
+    notifications_enabled: bool = False
+    sendgrid_api_key: Optional[str] = None
+    sendgrid_from_email: Optional[str] = None
+    notifications_provider: str = "sendgrid"  # Options: "sendgrid" or "mock"
 
     class Config:
         """
