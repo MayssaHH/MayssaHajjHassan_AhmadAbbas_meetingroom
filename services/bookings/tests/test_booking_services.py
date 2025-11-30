@@ -18,6 +18,7 @@ if str(ROOT_DIR) not in sys.path:
 
 from db.schema import Base, Booking, User, Room
 from services.bookings.app.service_layer import booking_service
+from unittest.mock import patch, MagicMock
 
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test_bookings_core.db"
@@ -425,3 +426,146 @@ def test_update_booking_different_room_no_conflict() -> None:
         assert updated.id == second.id
         assert updated.start_time == start + timedelta(minutes=15)
         assert updated.room_id == room_z.id
+
+
+def test_create_booking_sends_notification() -> None:
+    """
+    Creating a booking should trigger a notification with correct arguments.
+    """
+    with TestingSessionLocal() as db:
+        _clear_bookings(db)
+        
+        user = db.query(User).filter_by(username="alice").first()
+        room = db.query(Room).filter_by(name="Room A").first()
+        assert user is not None
+        assert room is not None
+        
+        # Record arguments passed to notification function
+        notification_calls = []
+        
+        def fake_notification(user_email, room_name, start_time, end_time):
+            """Fake notification function that records arguments."""
+            notification_calls.append({
+                "user_email": user_email,
+                "room_name": room_name,
+                "start_time": start_time,
+                "end_time": end_time,
+            })
+        
+        # Mock the clients to return user and room data
+        with patch("services.bookings.app.service_layer.booking_service.users_client.get_user") as mock_get_user, \
+             patch("services.bookings.app.service_layer.booking_service.rooms_client.get_room") as mock_get_room, \
+             patch("services.bookings.app.service_layer.booking_service.send_booking_created_notification", side_effect=fake_notification):
+            
+            mock_get_user.return_value = {
+                "id": user.id,
+                "email": user.email,
+                "name": user.name,
+                "username": user.username,
+            }
+            mock_get_room.return_value = {
+                "id": room.id,
+                "name": room.name,
+                "location": room.location,
+                "capacity": room.capacity,
+            }
+            
+            # Use a future date to avoid conflicts
+            start = datetime.now() + timedelta(days=30)
+            end = start + timedelta(hours=1)
+            
+            booking = booking_service.create_booking(
+                db,
+                user_id=user.id,
+                role=user.role,
+                room_id=room.id,
+                start_time=start,
+                end_time=end,
+                force_override=False,
+            )
+            
+            # Assert notification was called once
+            assert len(notification_calls) == 1
+            
+            # Assert correct arguments
+            call_args = notification_calls[0]
+            assert call_args["user_email"] == user.email
+            assert call_args["room_name"] == room.name
+            assert call_args["start_time"] == booking.start_time
+            assert call_args["end_time"] == booking.end_time
+
+
+def test_cancel_booking_sends_notification() -> None:
+    """
+    Cancelling a booking should trigger a cancellation notification with correct arguments.
+    """
+    with TestingSessionLocal() as db:
+        _clear_bookings(db)
+        
+        user = db.query(User).filter_by(username="alice").first()
+        room = db.query(Room).filter_by(name="Room A").first()
+        assert user is not None
+        assert room is not None
+        
+        # Record arguments passed to notification function
+        notification_calls = []
+        
+        def fake_notification(user_email, room_name, start_time, end_time):
+            """Fake notification function that records arguments."""
+            notification_calls.append({
+                "user_email": user_email,
+                "room_name": room_name,
+                "start_time": start_time,
+                "end_time": end_time,
+            })
+        
+        # Create a booking first
+        start = datetime.now() + timedelta(days=31)
+        end = start + timedelta(hours=1)
+        
+        booking = booking_service.create_booking(
+            db,
+            user_id=user.id,
+            role=user.role,
+            room_id=room.id,
+            start_time=start,
+            end_time=end,
+            force_override=False,
+        )
+        
+        # Mock the clients to return user and room data
+        with patch("services.bookings.app.service_layer.booking_service.users_client.get_user") as mock_get_user, \
+             patch("services.bookings.app.service_layer.booking_service.rooms_client.get_room") as mock_get_room, \
+             patch("services.bookings.app.service_layer.booking_service.send_booking_cancelled_notification", side_effect=fake_notification):
+            
+            mock_get_user.return_value = {
+                "id": user.id,
+                "email": user.email,
+                "name": user.name,
+                "username": user.username,
+            }
+            mock_get_room.return_value = {
+                "id": room.id,
+                "name": room.name,
+                "location": room.location,
+                "capacity": room.capacity,
+            }
+            
+            # Cancel the booking
+            cancelled_booking = booking_service.cancel_booking(
+                db,
+                booking_id=booking.id,
+                caller_user_id=user.id,
+                caller_role=user.role,
+                force=False,
+            )
+            
+            # Assert notification was called once
+            assert len(notification_calls) == 1
+            
+            # Assert correct arguments
+            call_args = notification_calls[0]
+            assert call_args["user_email"] == user.email
+            assert call_args["room_name"] == room.name
+            assert call_args["start_time"] == cancelled_booking.start_time
+            assert call_args["end_time"] == cancelled_booking.end_time

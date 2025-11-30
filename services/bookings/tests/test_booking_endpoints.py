@@ -20,6 +20,7 @@ from common.auth import get_password_hash, create_access_token
 from db.schema import Base, Booking, User, Room
 from db.init_db import get_db
 from services.bookings.app.main import app
+from unittest.mock import patch
 
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test_bookings_api.db"
@@ -512,3 +513,153 @@ def test_update_booking_endpoint_conflict_returns_409() -> None:
         headers={"Authorization": f"Bearer {token}"},
     )
     assert conflict_resp.status_code == 409
+
+
+def test_create_booking_endpoint_sends_notification() -> None:
+    """
+    Creating a booking via endpoint should trigger a notification with correct arguments.
+    """
+    _clear_all_bookings()
+    user = _ensure_user("notification_user")
+    
+    with TestingSessionLocal() as db:
+        room = db.query(Room).filter_by(name="Room E").first()
+        assert room is not None
+        room_id = room.id
+        room_name = room.name
+    token = _get_token(username=user.username, role=user.role, user_id=user.id)
+    
+    # Record arguments passed to notification function
+    notification_calls = []
+    
+    def fake_notification(user_email, room_name, start_time, end_time):
+        """Fake notification function that records arguments."""
+        notification_calls.append({
+            "user_email": user_email,
+            "room_name": room_name,
+            "start_time": start_time,
+            "end_time": end_time,
+        })
+    
+    # Mock the clients to return user and room data
+    with patch("services.bookings.app.service_layer.booking_service.users_client.get_user") as mock_get_user, \
+         patch("services.bookings.app.service_layer.booking_service.rooms_client.get_room") as mock_get_room, \
+         patch("services.bookings.app.service_layer.booking_service.send_booking_created_notification", side_effect=fake_notification):
+        
+        mock_get_user.return_value = {
+            "id": user.id,
+            "email": user.email,
+            "name": user.name,
+            "username": user.username,
+        }
+        mock_get_room.return_value = {
+            "id": room_id,
+            "name": room_name,
+            "location": "Building B",
+            "capacity": 8,
+        }
+        
+        start = (datetime.now() + timedelta(days=50)).replace(microsecond=0)
+        end = start + timedelta(hours=1)
+        
+        response = client.post(
+            "/api/v1/bookings/",
+            json={
+                "room_id": room_id,
+                "start_time": start.isoformat(),
+                "end_time": end.isoformat(),
+            },
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        
+        assert response.status_code == 201, response.text
+        booking_data = response.json()
+        
+        # Assert notification was called once
+        assert len(notification_calls) == 1
+        
+        # Assert correct arguments
+        call_args = notification_calls[0]
+        assert call_args["user_email"] == user.email
+        assert call_args["room_name"] == room_name
+        # Compare datetime objects (they should match)
+        assert call_args["start_time"].isoformat() == start.isoformat()
+        assert call_args["end_time"].isoformat() == end.isoformat()
+
+
+def test_cancel_booking_endpoint_sends_notification() -> None:
+    """
+    Cancelling a booking via endpoint should trigger a cancellation notification with correct arguments.
+    """
+    _clear_all_bookings()
+    user = _ensure_user("cancel_notification_user")
+    
+    with TestingSessionLocal() as db:
+        room = db.query(Room).filter_by(name="Room E").first()
+        assert room is not None
+        room_id = room.id
+        room_name = room.name
+    token = _get_token(username=user.username, role=user.role, user_id=user.id)
+    
+    # Create a booking first
+    start = (datetime.now() + timedelta(days=51)).replace(microsecond=0)
+    end = start + timedelta(hours=1)
+    resp = client.post(
+        "/api/v1/bookings/",
+        json={
+            "room_id": room_id,
+            "start_time": start.isoformat(),
+            "end_time": end.isoformat(),
+        },
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert resp.status_code == 201
+    booking_id = resp.json()["id"]
+    
+    # Record arguments passed to notification function
+    notification_calls = []
+    
+    def fake_notification(user_email, room_name, start_time, end_time):
+        """Fake notification function that records arguments."""
+        notification_calls.append({
+            "user_email": user_email,
+            "room_name": room_name,
+            "start_time": start_time,
+            "end_time": end_time,
+        })
+    
+    # Mock the clients to return user and room data
+    with patch("services.bookings.app.service_layer.booking_service.users_client.get_user") as mock_get_user, \
+         patch("services.bookings.app.service_layer.booking_service.rooms_client.get_room") as mock_get_room, \
+         patch("services.bookings.app.service_layer.booking_service.send_booking_cancelled_notification", side_effect=fake_notification):
+        
+        mock_get_user.return_value = {
+            "id": user.id,
+            "email": user.email,
+            "name": user.name,
+            "username": user.username,
+        }
+        mock_get_room.return_value = {
+            "id": room_id,
+            "name": room_name,
+            "location": "Building B",
+            "capacity": 8,
+        }
+        
+        # Cancel the booking
+        delete_resp = client.delete(
+            f"/api/v1/bookings/{booking_id}",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert delete_resp.status_code == 204
+        
+        # Assert notification was called once
+        assert len(notification_calls) == 1
+        
+        # Assert correct arguments
+        call_args = notification_calls[0]
+        assert call_args["user_email"] == user.email
+        assert call_args["room_name"] == room_name
+        # Compare datetime objects (they should match)
+        assert call_args["start_time"].isoformat() == start.isoformat()
+        assert call_args["end_time"].isoformat() == end.isoformat()
