@@ -68,7 +68,7 @@ def test_average_rating_requires_privileged_role() -> None:
     client = TestClient(app)
     token = _make_token(10, "regular")
     resp = client.get(
-        "/analytics/reviews/average-rating-by-room",
+        "/api/v1/analytics/reviews/average-rating-by-room",
         headers={"Authorization": f"Bearer {token}"},
     )
     assert resp.status_code in (401, 403)
@@ -78,12 +78,12 @@ def test_average_rating_by_room_admin() -> None:
     client = TestClient(app)
     token = _make_token(1, "admin")
     resp = client.get(
-        "/analytics/reviews/average-rating-by-room",
+        "/api/v1/analytics/reviews/average-rating-by-room",
         headers={"Authorization": f"Bearer $token".replace("$token", token)},
     )
     # Correction: use proper header
     resp = client.get(
-        "/analytics/reviews/average-rating-by-room",
+        "/api/v1/analytics/reviews/average-rating-by-room",
         headers={"Authorization": f"Bearer {token}"},
     )
     assert resp.status_code == 200

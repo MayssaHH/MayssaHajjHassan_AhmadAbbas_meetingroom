@@ -43,7 +43,7 @@ def test_valid_review_is_accepted(client: TestClient) -> None:
         "comment": "Great room, very clean!",
     }
     response = client.post(
-        "/reviews",
+        "/api/v1/reviews",
         json=payload,
         headers={"Authorization": f"Bearer {token}"},
     )
@@ -68,7 +68,7 @@ def test_invalid_rating_is_rejected(client: TestClient) -> None:
         "comment": "Too good to be true",
     }
     response = client.post(
-        "/reviews",
+        "/api/v1/reviews",
         json=payload,
         headers={"Authorization": f"Bearer {token}"},
     )
@@ -91,13 +91,13 @@ def test_unauthenticated_cannot_create_update_delete(client: TestClient) -> None
 
     # Try update without token (id=1 will not exist but auth fails first)
     update_resp = client.put(
-        "/reviews/1",
+        "/api/v1/reviews/1",
         json={"rating": 3},
     )
     assert update_resp.status_code in (401, 403)
 
     # Try delete without token
-    delete_resp = client.delete("/reviews/1")
+    delete_resp = client.delete("/api/v1/reviews/1")
     assert delete_resp.status_code in (401, 403)
 
 
@@ -119,7 +119,7 @@ def test_only_owner_can_update_and_delete(client: TestClient) -> None:
 
     # Other user tries to update
     update_resp = client.put(
-        f"/reviews/{review_id}",
+        f"/api/v1/reviews/{review_id}",
         json={"rating": 1},
         headers={"Authorization": f"Bearer {other_token}"},
     )
@@ -127,14 +127,14 @@ def test_only_owner_can_update_and_delete(client: TestClient) -> None:
 
     # Other user tries to delete
     delete_resp = client.delete(
-        f"/reviews/{review_id}",
+        f"/api/v1/reviews/{review_id}",
         headers={"Authorization": f"Bearer {other_token}"},
     )
     assert delete_resp.status_code == 403
 
     # Owner can update
     owner_update = client.put(
-        f"/reviews/{review_id}",
+        f"/api/v1/reviews/{review_id}",
         json={"rating": 5},
         headers={"Authorization": f"Bearer {owner_token}"},
     )
@@ -143,7 +143,7 @@ def test_only_owner_can_update_and_delete(client: TestClient) -> None:
 
     # Owner can delete
     owner_delete = client.delete(
-        f"/reviews/{review_id}",
+        f"/api/v1/reviews/{review_id}",
         headers={"Authorization": f"Bearer {owner_token}"},
     )
     assert owner_delete.status_code == 204
@@ -167,7 +167,7 @@ def test_moderator_can_flag_and_unflag_review(client: TestClient) -> None:
 
     # Moderator flags the review
     flag_resp = client.post(
-        f"/reviews/{review_id}/flag",
+        f"/api/v1/admin/reviews/{review_id}/flag",
         headers={"Authorization": f"Bearer {moderator_token}"},
     )
     assert flag_resp.status_code == 200
@@ -175,7 +175,7 @@ def test_moderator_can_flag_and_unflag_review(client: TestClient) -> None:
 
     # Moderator unflags the review
     unflag_resp = client.post(
-        f"/reviews/{review_id}/unflag",
+        f"/api/v1/admin/reviews/{review_id}/unflag",
         headers={"Authorization": f"Bearer {moderator_token}"},
     )
     assert unflag_resp.status_code == 200
@@ -194,7 +194,7 @@ def test_comment_is_sanitized(client: TestClient) -> None:
         "comment": "<b>Nice</b> <script>alert('x')</script> room",
     }
     response = client.post(
-        "/reviews",
+        "/api/v1/reviews",
         json=payload,
         headers={"Authorization": f"Bearer {token}"},
     )
@@ -222,7 +222,7 @@ def test_get_reviews_for_room_returns_created_entries(client: TestClient) -> Non
         assert resp.status_code in (200, 201)
 
     response = client.get(
-        "/reviews/room/99",
+        "/api/v1/reviews/room/99",
         headers={"Authorization": f"Bearer {token}"},
     )
     assert response.status_code == 200
@@ -246,18 +246,18 @@ def test_flagged_reviews_listing_requires_moderator(client: TestClient) -> None:
     review_id = create_resp.json()["id"]
 
     client.post(
-        f"/reviews/{review_id}/flag",
+        f"/api/v1/admin/reviews/{review_id}/flag",
         headers={"Authorization": f"Bearer {moderator_token}"},
     )
 
     forbidden = client.get(
-        "/reviews/flagged",
+        "/api/v1/reviews/flagged",
         headers={"Authorization": f"Bearer {regular_token}"},
     )
     assert forbidden.status_code == 403
 
     allowed = client.get(
-        "/reviews/flagged",
+        "/api/v1/reviews/flagged",
         headers={"Authorization": f"Bearer {moderator_token}"},
     )
     assert allowed.status_code == 200

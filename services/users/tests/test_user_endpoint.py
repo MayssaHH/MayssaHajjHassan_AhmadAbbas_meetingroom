@@ -32,7 +32,7 @@ def _register_user(
         "password": "password123",
         "role": role,
     }
-    response = client.post("/users/register", json=payload)
+    response = client.post("/api/v1/users/register", json=payload)
     assert response.status_code in (200, 201)
     return response.json()
 
@@ -42,7 +42,7 @@ def _login(client: TestClient, username: str, password: str = "password123") -> 
     Helper to log in a user and return the access token.
     """
     response = client.post(
-        "/users/login",
+        "/api/v1/users/login",
         json={"username": username, "password": password},
     )
     assert response.status_code == 200
@@ -60,7 +60,7 @@ def test_list_users_admin_only(client: TestClient) -> None:
     # Admin call
     admin_token = _login(client, "admin")
     admin_headers = {"Authorization": f"Bearer {admin_token}"}
-    admin_response = client.get("/users", headers=admin_headers)
+    admin_response = client.get("/api/v1/users", headers=admin_headers)
     assert admin_response.status_code == 200
     users = admin_response.json()
     assert isinstance(users, list)
@@ -69,7 +69,7 @@ def test_list_users_admin_only(client: TestClient) -> None:
     # Regular user call
     regular_token = _login(client, "bob")
     regular_headers = {"Authorization": f"Bearer {regular_token}"}
-    regular_response = client.get("/users", headers=regular_headers)
+    regular_response = client.get("/api/v1/users", headers=regular_headers)
     # Either 401 or 403 is acceptable for "not allowed".
     assert regular_response.status_code in (401, 403)
 
@@ -86,7 +86,7 @@ def test_update_own_profile_works(client: TestClient) -> None:
         "name": "Carol Updated",
         "email": "carol.updated@example.com",
     }
-    response = client.put("/users/me", json=update_payload, headers=headers)
+    response = client.put("/api/v1/users/me", json=update_payload, headers=headers)
 
     assert response.status_code == 200
     data = response.json()
@@ -105,7 +105,7 @@ def test_non_admin_cannot_change_other_user_role(client: TestClient) -> None:
     headers = {"Authorization": f"Bearer {user_token}"}
 
     response = client.patch(
-        f"/users/{target['id']}/role",
+        f"/api/v1/users/{target['id']}/role",
         json={"role": "admin"},
         headers=headers,
     )
@@ -123,7 +123,7 @@ def test_admin_can_change_user_role(client: TestClient) -> None:
     headers = {"Authorization": f"Bearer {admin_token}"}
 
     response = client.patch(
-        f"/users/{target['id']}/role",
+        f"/api/v1/users/{target['id']}/role",
         json={"role": "moderator"},
         headers=headers,
     )
@@ -179,7 +179,7 @@ def test_admin_role_update_rejects_invalid_role(client: TestClient) -> None:
     admin_token = _login(client, "chiefadmin")
     headers = {"Authorization": f"Bearer {admin_token}"}
     response = client.patch(
-        f"/users/{target['id']}/role",
+        f"/api/v1/users/{target['id']}/role",
         json={"role": "superhero"},
         headers=headers,
     )

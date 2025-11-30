@@ -48,7 +48,7 @@ def _create_room(
         "status": status,
     }
     response = client.post(
-        "/rooms",
+        "/api/v1/rooms",
         json=payload,
         headers={"Authorization": f"Bearer {token}"},
     )
@@ -70,7 +70,7 @@ def test_facility_manager_can_create_room(client: TestClient) -> None:
         "status": "active",
     }
     response = client.post(
-        "/rooms",
+        "/api/v1/rooms",
         json=payload,
         headers={"Authorization": f"Bearer {token}"},
     )
@@ -96,7 +96,7 @@ def test_regular_user_cannot_create_room(client: TestClient) -> None:
         "status": "active",
     }
     response = client.post(
-        "/rooms",
+        "/api/v1/rooms",
         json=payload,
         headers={"Authorization": f"Bearer {token}"},
     )
@@ -136,7 +136,7 @@ def test_filter_by_min_capacity(client: TestClient) -> None:
     # Regular user listing with min_capacity filter
     token_regular = _make_token(user_id=2, role="regular")
     response = client.get(
-        "/rooms",
+        "/api/v1/rooms",
         params={"min_capacity": 10},
         headers={"Authorization": f"Bearer {token_regular}"},
     )
@@ -172,7 +172,7 @@ def test_room_status_endpoint_returns_static_status(client: TestClient) -> None:
 
     token_regular = _make_token(user_id=2, role="regular")
     status_resp = client.get(
-        f"/rooms/{room_id}/status",
+        f"/api/v1/rooms/{room_id}/status",
         headers={"Authorization": f"Bearer {token_regular}"},
     )
 
@@ -203,7 +203,7 @@ def test_room_manager_can_update_room(client: TestClient) -> None:
         "status": "out_of_service",
     }
     response = client.put(
-        f"/rooms/{room_id}",
+        f"/api/v1/rooms/{room_id}",
         json=update_payload,
         headers={"Authorization": f"Bearer {manager_token}"},
     )
@@ -224,7 +224,7 @@ def test_regular_user_cannot_update_room(client: TestClient) -> None:
 
     regular_token = _make_token(user_id=2, role="regular")
     response = client.put(
-        f"/rooms/{room_id}",
+        f"/api/v1/rooms/{room_id}",
         json={"capacity": 999},
         headers={"Authorization": f"Bearer {regular_token}"},
     )
@@ -239,14 +239,14 @@ def test_room_manager_can_delete_room(client: TestClient) -> None:
     room_id = _create_room(client, token=manager_token, name="DeleteRoom")
 
     response = client.delete(
-        f"/rooms/{room_id}",
+        f"/api/v1/rooms/{room_id}",
         headers={"Authorization": f"Bearer {manager_token}"},
     )
     assert response.status_code == 204
 
     # Subsequent fetch should 404
     check = client.get(
-        f"/rooms/{room_id}",
+        f"/api/v1/rooms/{room_id}",
         headers={"Authorization": f"Bearer {manager_token}"},
     )
     assert check.status_code == 404
@@ -261,7 +261,7 @@ def test_regular_user_cannot_delete_room(client: TestClient) -> None:
 
     regular_token = _make_token(user_id=2, role="regular")
     response = client.delete(
-        f"/rooms/{room_id}",
+        f"/api/v1/rooms/{room_id}",
         headers={"Authorization": f"Bearer {regular_token}"},
     )
     assert response.status_code in (401, 403)

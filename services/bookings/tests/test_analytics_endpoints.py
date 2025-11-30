@@ -82,13 +82,13 @@ def _make_token(uid: int, role: str) -> str:
 
 def test_summary_requires_admin() -> None:
     token = _make_token(2, "regular")
-    resp = client.get("/analytics/bookings/summary", headers={"Authorization": f"Bearer {token}"})
+    resp = client.get("/api/v1/analytics/bookings/summary", headers={"Authorization": f"Bearer {token}"})
     assert resp.status_code in (401, 403)
 
 
 def test_summary_admin_ok() -> None:
     token = _make_token(1, "admin")
-    resp = client.get("/analytics/bookings/summary", headers={"Authorization": f"Bearer {token}"})
+    resp = client.get("/api/v1/analytics/bookings/summary", headers={"Authorization": f"Bearer {token}"})
     assert resp.status_code == 200
     data = resp.json()
     assert data["total_bookings"] == 3
@@ -98,7 +98,7 @@ def test_summary_admin_ok() -> None:
 
 def test_by_room_admin_ok() -> None:
     token = _make_token(1, "admin")
-    resp = client.get("/analytics/bookings/by-room", headers={"Authorization": f"Bearer {token}"})
+    resp = client.get("/api/v1/analytics/bookings/by-room", headers={"Authorization": f"Bearer {token}"})
     assert resp.status_code == 200
     payload = {item["room_id"]: item for item in resp.json()}
     assert payload[1]["total"] == 2

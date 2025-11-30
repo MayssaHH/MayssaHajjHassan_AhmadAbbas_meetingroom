@@ -120,7 +120,7 @@ def test_create_booking_endpoint() -> None:
     end = start + timedelta(hours=1)
 
     response = client.post(
-        "/bookings/",
+        "/api/v1/bookings/",
         json={
             "room_id": room_id,
             "start_time": start.isoformat(),
@@ -175,7 +175,7 @@ def test_conflicting_booking_returns_409() -> None:
 
     # Second overlapping booking via API
     response = client.post(
-        "/bookings/",
+        "/api/v1/bookings/",
         json={
             "room_id": room_id,
             "start_time": (start + timedelta(minutes=15)).isoformat(),
@@ -228,7 +228,7 @@ def test_admin_override_endpoint() -> None:
         existing_id = existing.id
 
     response = client.post(
-        "/admin/bookings/override",
+        "/api/v1/admin/bookings/override",
         json={
             "room_id": room_id,
             "start_time": (start + timedelta(minutes=10)).isoformat(),
@@ -286,7 +286,7 @@ def test_list_my_bookings_returns_created_entries() -> None:
     start = (datetime.now() + timedelta(days=40)).replace(microsecond=0)
     end = start + timedelta(hours=2)
     resp = client.post(
-        "/bookings/",
+        "/api/v1/bookings/",
         json={
             "room_id": room_id,
             "start_time": start.isoformat(),
@@ -298,7 +298,7 @@ def test_list_my_bookings_returns_created_entries() -> None:
     created_id = resp.json()["id"]
 
     list_resp = client.get(
-        "/bookings/me",
+        "/api/v1/bookings/me",
         headers={"Authorization": f"Bearer {token}"},
     )
     assert list_resp.status_code == 200
@@ -322,7 +322,7 @@ def test_update_booking_endpoint_allows_owner() -> None:
     start = (datetime.now() + timedelta(days=41)).replace(microsecond=0)
     end = start + timedelta(hours=2)
     resp = client.post(
-        "/bookings/",
+        "/api/v1/bookings/",
         json={
             "room_id": room_id,
             "start_time": start.isoformat(),
@@ -336,7 +336,7 @@ def test_update_booking_endpoint_allows_owner() -> None:
     new_start = start + timedelta(hours=3)
     new_end = new_start + timedelta(hours=1)
     update_resp = client.put(
-        f"/bookings/{booking_id}",
+        f"/api/v1/bookings/{booking_id}",
         json={
             "start_time": new_start.isoformat(),
             "end_time": new_end.isoformat(),
@@ -367,7 +367,7 @@ def test_update_booking_endpoint_rejects_other_users() -> None:
     start = (datetime.now() + timedelta(days=42)).replace(microsecond=0)
     end = start + timedelta(hours=1)
     resp = client.post(
-        "/bookings/",
+        "/api/v1/bookings/",
         json={
             "room_id": room_id,
             "start_time": start.isoformat(),
@@ -378,7 +378,7 @@ def test_update_booking_endpoint_rejects_other_users() -> None:
     booking_id = resp.json()["id"]
 
     update_resp = client.put(
-        f"/bookings/{booking_id}",
+        f"/api/v1/bookings/{booking_id}",
         json={
             "start_time": (start + timedelta(hours=2)).isoformat(),
             "end_time": (end + timedelta(hours=2)).isoformat(),
@@ -404,7 +404,7 @@ def test_cancel_booking_endpoint_marks_status_cancelled() -> None:
     start = (datetime.now() + timedelta(days=43)).replace(microsecond=0)
     end = start + timedelta(hours=1)
     resp = client.post(
-        "/bookings/",
+        "/api/v1/bookings/",
         json={
             "room_id": room_id,
             "start_time": start.isoformat(),
@@ -415,7 +415,7 @@ def test_cancel_booking_endpoint_marks_status_cancelled() -> None:
     booking_id = resp.json()["id"]
 
     delete_resp = client.delete(
-        f"/bookings/{booking_id}",
+        f"/api/v1/bookings/{booking_id}",
         headers={"Authorization": f"Bearer {token}"},
     )
     assert delete_resp.status_code == 204
@@ -437,7 +437,7 @@ def test_create_booking_for_missing_room_returns_400() -> None:
     start = (datetime.now() + timedelta(days=44)).replace(microsecond=0)
     end = start + timedelta(hours=1)
     response = client.post(
-        "/bookings/",
+        "/api/v1/bookings/",
         json={
             "room_id": 9999,
             "start_time": start.isoformat(),
@@ -459,7 +459,7 @@ def test_update_booking_endpoint_not_found_returns_404() -> None:
     start = (datetime.now() + timedelta(days=45)).replace(microsecond=0)
     end = start + timedelta(hours=1)
     response = client.put(
-        "/bookings/99999",
+        "/api/v1/bookings/99999",
         json={"start_time": start.isoformat(), "end_time": end.isoformat()},
         headers={"Authorization": f"Bearer {token}"},
     )
@@ -482,7 +482,7 @@ def test_update_booking_endpoint_conflict_returns_409() -> None:
     base_start = (datetime.now() + timedelta(days=46)).replace(microsecond=0)
     base_end = base_start + timedelta(hours=1)
     first = client.post(
-        "/bookings/",
+        "/api/v1/bookings/",
         json={
             "room_id": room_id,
             "start_time": base_start.isoformat(),
@@ -493,7 +493,7 @@ def test_update_booking_endpoint_conflict_returns_409() -> None:
     assert first.status_code == 201
 
     second = client.post(
-        "/bookings/",
+        "/api/v1/bookings/",
         json={
             "room_id": room_id,
             "start_time": (base_end + timedelta(hours=1)).isoformat(),
@@ -504,7 +504,7 @@ def test_update_booking_endpoint_conflict_returns_409() -> None:
     booking_id = second.json()["id"]
 
     conflict_resp = client.put(
-        f"/bookings/{booking_id}",
+        f"/api/v1/bookings/{booking_id}",
         json={
             "start_time": (base_start + timedelta(minutes=15)).isoformat(),
             "end_time": (base_end + timedelta(minutes=15)).isoformat(),
