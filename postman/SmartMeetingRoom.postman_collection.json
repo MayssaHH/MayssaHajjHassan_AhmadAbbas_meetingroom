@@ -6,22 +6,22 @@
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-  {
-    "key": "users_base_url",
-    "value": "http://localhost:8001"
-  },
-  {
-    "key": "rooms_base_url",
-    "value": "http://localhost:8002"
-  },
-  {
-    "key": "bookings_base_url",
-    "value": "http://localhost:8003"
-  },
-  {
-    "key": "reviews_base_url",
-    "value": "http://localhost:8004"
-  }
+    {
+      "key": "users_base_url",
+      "value": "http://localhost:8001"
+    },
+    {
+      "key": "rooms_base_url",
+      "value": "http://localhost:8002"
+    },
+    {
+      "key": "bookings_base_url",
+      "value": "http://localhost:8003"
+    },
+    {
+      "key": "reviews_base_url",
+      "value": "http://localhost:8004"
+    }
   ],
   "item": [
     {
@@ -42,11 +42,13 @@
               "raw": "{\n  \"name\": \"Alice Example\",\n  \"username\": \"alice\",\n  \"email\": \"alice@example.com\",\n  \"password\": \"password123\",\n  \"role\": \"regular\"\n}"
             },
             "url": {
-              "raw": "{{users_base_url}}/users/register",
+              "raw": "{{users_base_url}}/api/v1/users/register",
               "host": [
                 "{{users_base_url}}"
               ],
               "path": [
+                "api",
+                "v1",
                 "users",
                 "register"
               ]
@@ -70,11 +72,13 @@
               "raw": "{\n  \"username\": \"alice\",\n  \"password\": \"password123\"\n}"
             },
             "url": {
-              "raw": "{{users_base_url}}/users/login",
+              "raw": "{{users_base_url}}/api/v1/users/login",
               "host": [
                 "{{users_base_url}}"
               ],
               "path": [
+                "api",
+                "v1",
                 "users",
                 "login"
               ]
@@ -95,11 +99,13 @@
               }
             ],
             "url": {
-              "raw": "{{users_base_url}}/users/me",
+              "raw": "{{users_base_url}}/api/v1/users/me",
               "host": [
                 "{{users_base_url}}"
               ],
               "path": [
+                "api",
+                "v1",
                 "users",
                 "me"
               ]
@@ -120,11 +126,13 @@
               }
             ],
             "url": {
-              "raw": "{{users_base_url}}/users",
+              "raw": "{{users_base_url}}/api/v1/users",
               "host": [
                 "{{users_base_url}}"
               ],
               "path": [
+                "api",
+                "v1",
                 "users"
               ]
             },
@@ -143,11 +151,13 @@
               }
             ],
             "url": {
-              "raw": "{{users_base_url}}/users/{{username}}",
+              "raw": "{{users_base_url}}/api/v1/users/{{username}}",
               "host": [
                 "{{users_base_url}}"
               ],
               "path": [
+                "api",
+                "v1",
                 "users",
                 "{{username}}"
               ]
@@ -175,11 +185,13 @@
               "raw": "{\n  \"name\": \"Alice Updated\",\n  \"email\": \"alice.updated@example.com\"\n}"
             },
             "url": {
-              "raw": "{{users_base_url}}/users/me",
+              "raw": "{{users_base_url}}/api/v1/users/me",
               "host": [
                 "{{users_base_url}}"
               ],
               "path": [
+                "api",
+                "v1",
                 "users",
                 "me"
               ]
@@ -199,11 +211,13 @@
               }
             ],
             "url": {
-              "raw": "{{users_base_url}}/users/me",
+              "raw": "{{users_base_url}}/api/v1/users/me",
               "host": [
                 "{{users_base_url}}"
               ],
               "path": [
+                "api",
+                "v1",
                 "users",
                 "me"
               ]
@@ -231,11 +245,13 @@
               "raw": "{\n  \"role\": \"moderator\"\n}"
             },
             "url": {
-              "raw": "{{users_base_url}}/users/{{user_id}}/role",
+              "raw": "{{users_base_url}}/api/v1/users/{{user_id}}/role",
               "host": [
                 "{{users_base_url}}"
               ],
               "path": [
+                "api",
+                "v1",
                 "users",
                 "{{user_id}}",
                 "role"
@@ -246,7 +262,7 @@
           "response": []
         }
       ]
-    }, 
+    },
     {
       "name": "Rooms",
       "item": [
@@ -270,11 +286,13 @@
               "raw": "{\n  \"name\": \"Room A\",\n  \"capacity\": 12,\n  \"equipment\": [\"projector\", \"whiteboard\", \"video_conference\"],\n  \"location\": \"Building A - Floor 2\",\n  \"status\": \"active\"\n}"
             },
             "url": {
-              "raw": "{{rooms_base_url}}/rooms",
+              "raw": "{{rooms_base_url}}/api/v1/rooms",
               "host": [
                 "{{rooms_base_url}}"
               ],
               "path": [
+                "api",
+                "v1",
                 "rooms"
               ]
             },
@@ -302,11 +320,13 @@
               "raw": "{\n  \"capacity\": 20,\n  \"equipment\": [\"projector\", \"whiteboard\"],\n  \"location\": \"Building B - Floor 1\",\n  \"status\": \"active\"\n}"
             },
             "url": {
-              "raw": "{{rooms_base_url}}/rooms/{{room_id}}",
+              "raw": "{{rooms_base_url}}/api/v1/rooms/{{room_id}}",
               "host": [
                 "{{rooms_base_url}}"
               ],
               "path": [
+                "api",
+                "v1",
                 "rooms",
                 "{{room_id}}"
               ]
@@ -327,11 +347,13 @@
               }
             ],
             "url": {
-              "raw": "{{rooms_base_url}}/rooms/{{room_id}}",
+              "raw": "{{rooms_base_url}}/api/v1/rooms/{{room_id}}",
               "host": [
                 "{{rooms_base_url}}"
               ],
               "path": [
+                "api",
+                "v1",
                 "rooms",
                 "{{room_id}}"
               ]
@@ -346,11 +368,13 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{rooms_base_url}}/rooms?capacity={{capacity}}&location={{location}}&equipment={{equipment}}",
+              "raw": "{{rooms_base_url}}/api/v1/rooms?capacity={{capacity}}&location={{location}}&equipment={{equipment}}",
               "host": [
                 "{{rooms_base_url}}"
               ],
               "path": [
+                "api",
+                "v1",
                 "rooms"
               ],
               "query": [
@@ -381,18 +405,51 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{rooms_base_url}}/rooms/{{room_id}}",
+              "raw": "{{rooms_base_url}}/api/v1/rooms/{{room_id}}",
               "host": [
                 "{{rooms_base_url}}"
               ],
               "path": [
+                "api",
+                "v1",
                 "rooms",
                 "{{room_id}}"
               ]
             },
             "description": "Retrieve detailed information for a single room by its identifier."
           },
-          "response": []
+          "response": [
+            {
+              "name": "Success - Room retrieved",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{rooms_base_url}}/api/v1/rooms/1",
+                  "host": [
+                    "{{rooms_base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "rooms",
+                    "1"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"id\": 1,\n  \"name\": \"Room A\",\n  \"location\": \"Building A - Floor 2\",\n  \"capacity\": 12,\n  \"equipment\": [\"projector\", \"whiteboard\"],\n  \"status\": \"active\",\n  \"created_at\": \"2025-01-01T10:00:00Z\",\n  \"updated_at\": \"2025-01-01T10:00:00Z\"\n}"
+            }
+          ]
         },
         {
           "name": "Get room status",
@@ -400,11 +457,13 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{rooms_base_url}}/rooms/{{room_id}}/status?start_time={{start_time}}&end_time={{end_time}}",
+              "raw": "{{rooms_base_url}}/api/v1/rooms/{{room_id}}/status?start_time={{start_time}}&end_time={{end_time}}",
               "host": [
                 "{{rooms_base_url}}"
               ],
               "path": [
+                "api",
+                "v1",
                 "rooms",
                 "{{room_id}}",
                 "status"
@@ -428,617 +487,790 @@
         }
       ]
     },
-      {
-    "name": "Bookings",
-    "item": [
-      {
-        "name": "Get my bookings",
-        "request": {
-          "method": "GET",
-          "header": [
-            {
-              "key": "Authorization",
-              "value": "Bearer {{access_token}}",
-              "description": "JWT for a regular user."
-            }
-          ],
-          "url": {
-            "raw": "{{bookings_base_url}}/bookings/me",
-            "host": [
-              "{{bookings_base_url}}"
+    {
+      "name": "Bookings",
+      "item": [
+        {
+          "name": "Get my bookings",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "description": "JWT for a regular user."
+              }
             ],
-            "path": [
-              "bookings",
-              "me"
-            ]
-          },
-          "description": "Return all bookings that belong to the currently authenticated user."
-        },
-        "response": []
-      },
-      {
-        "name": "Create booking",
-        "request": {
-          "method": "POST",
-          "header": [
-            {
-              "key": "Content-Type",
-              "value": "application/json"
+            "url": {
+              "raw": "{{bookings_base_url}}/api/v1/bookings/me",
+              "host": [
+                "{{bookings_base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "bookings",
+                "me"
+              ]
             },
-            {
-              "key": "Authorization",
-              "value": "Bearer {{access_token}}",
-              "description": "JWT for a regular user."
-            }
-          ],
-          "body": {
-            "mode": "raw",
-            "raw": "{\n  \"room_id\": 1,\n  \"start_time\": \"2025-01-01T10:00:00\",\n  \"end_time\": \"2025-01-01T11:00:00\",\n  \"title\": \"Team sync\"\n}"
+            "description": "Return all bookings that belong to the currently authenticated user."
           },
-          "url": {
-            "raw": "{{bookings_base_url}}/bookings",
-            "host": [
-              "{{bookings_base_url}}"
-            ],
-            "path": [
-              "bookings"
-            ]
-          },
-          "description": "Create a new booking for a room and time window. Fails with 409 if there is a conflicting confirmed booking."
+          "response": []
         },
-        "response": []
-      },
-      {
-        "name": "Update my booking",
-        "request": {
-          "method": "PUT",
-          "header": [
-            {
-              "key": "Content-Type",
-              "value": "application/json"
+        {
+          "name": "Create booking",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "description": "JWT for a regular user."
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"room_id\": 1,\n  \"start_time\": \"2025-01-01T10:00:00\",\n  \"end_time\": \"2025-01-01T11:00:00\",\n  \"title\": \"Team sync\"\n}"
             },
-            {
-              "key": "Authorization",
-              "value": "Bearer {{access_token}}"
-            }
-          ],
-          "body": {
-            "mode": "raw",
-            "raw": "{\n  \"start_time\": \"2025-01-01T11:00:00\",\n  \"end_time\": \"2025-01-01T12:00:00\"\n}"
-          },
-          "url": {
-            "raw": "{{bookings_base_url}}/bookings/{{booking_id}}",
-            "host": [
-              "{{bookings_base_url}}"
-            ],
-            "path": [
-              "bookings",
-              "{{booking_id}}"
-            ]
-          },
-          "description": "Update an existing booking owned by the current user. Server returns 403 if the booking belongs to someone else."
-        },
-        "response": []
-      },
-      {
-        "name": "Cancel my booking",
-        "request": {
-          "method": "DELETE",
-          "header": [
-            {
-              "key": "Authorization",
-              "value": "Bearer {{access_token}}"
-            }
-          ],
-          "url": {
-            "raw": "{{bookings_base_url}}/bookings/{{booking_id}}",
-            "host": [
-              "{{bookings_base_url}}"
-            ],
-            "path": [
-              "bookings",
-              "{{booking_id}}"
-            ]
-          },
-          "description": "Cancel a booking owned by the current user (soft delete)."
-        },
-        "response": []
-      },
-      {
-        "name": "List all bookings (admin/facility/auditor)",
-        "request": {
-          "method": "GET",
-          "header": [
-            {
-              "key": "Authorization",
-              "value": "Bearer {{admin_token}}",
-              "description": "Token for an admin, facility manager, or auditor."
-            }
-          ],
-          "url": {
-            "raw": "{{bookings_base_url}}/admin/bookings",
-            "host": [
-              "{{bookings_base_url}}"
-            ],
-            "path": [
-              "admin",
-              "bookings"
-            ]
-          },
-          "description": "List all bookings in the system. Restricted to admin/facility_manager/auditor roles."
-        },
-        "response": []
-      },
-      {
-        "name": "Create booking with override (admin only)",
-        "request": {
-          "method": "POST",
-          "header": [
-            {
-              "key": "Content-Type",
-              "value": "application/json"
+            "url": {
+              "raw": "{{bookings_base_url}}/api/v1/bookings",
+              "host": [
+                "{{bookings_base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "bookings"
+              ]
             },
+            "description": "Create a new booking for a room and time window. Fails with 409 if there is a conflicting confirmed booking."
+          },
+          "response": [
             {
-              "key": "Authorization",
-              "value": "Bearer {{admin_token}}"
+              "name": "Error - Booking Conflict (409)",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"room_id\": 1,\n  \"start_time\": \"2025-01-01T10:00:00\",\n  \"end_time\": \"2025-01-01T11:00:00\",\n  \"title\": \"Team sync\"\n}"
+                },
+                "url": {
+                  "raw": "{{bookings_base_url}}/api/v1/bookings",
+                  "host": [
+                    "{{bookings_base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "bookings"
+                  ]
+                }
+              },
+              "status": "Conflict",
+              "code": 409,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"error_code\": \"BOOKING_CONFLICT\",\n  \"message\": \"The room is already booked in the requested time range.\",\n  \"details\": {}\n}"
             }
-          ],
-          "body": {
-            "mode": "raw",
-            "raw": "{\n  \"room_id\": 1,\n  \"start_time\": \"2025-01-01T08:00:00\",\n  \"end_time\": \"2025-01-01T09:00:00\"\n}"
-          },
-          "url": {
-            "raw": "{{bookings_base_url}}/admin/bookings/override",
-            "host": [
-              "{{bookings_base_url}}"
-            ],
-            "path": [
-              "admin",
-              "bookings",
-              "override"
-            ]
-          },
-          "description": "Create a booking that force-cancels conflicting reservations. Admin only."
+          ]
         },
-        "response": []
-      },
-      {
-        "name": "Force-cancel booking (admin only)",
-        "request": {
-          "method": "POST",
-          "header": [
-            {
-              "key": "Authorization",
-              "value": "Bearer {{admin_token}}"
-            }
-          ],
-          "url": {
-            "raw": "{{bookings_base_url}}/admin/bookings/{{booking_id}}/force-cancel",
-            "host": [
-              "{{bookings_base_url}}"
+        {
+          "name": "Update my booking",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
             ],
-            "path": [
-              "admin",
-              "bookings",
-              "{{booking_id}}",
-              "force-cancel"
-            ]
-          },
-          "description": "Admin-only operation that force-cancels a booking even if it conflicts with others."
-        },
-        "response": []
-      }
-    ]
-  },
-  {
-    "name": "Reviews",
-    "item": [
-      {
-        "name": "Create review",
-        "request": {
-          "method": "POST",
-          "header": [
-            {
-              "key": "Content-Type",
-              "value": "application/json"
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"start_time\": \"2025-01-01T11:00:00\",\n  \"end_time\": \"2025-01-01T12:00:00\"\n}"
             },
-            {
-              "key": "Authorization",
-              "value": "Bearer {{access_token}}",
-              "description": "JWT for a regular authenticated user."
-            }
-          ],
-          "body": {
-            "mode": "raw",
-            "raw": "{\n  \"room_id\": 1,\n  \"rating\": 4,\n  \"comment\": \"The room was clean and quiet. The projector worked well.\"\n}"
-          },
-          "url": {
-            "raw": "{{reviews_base_url}}/reviews",
-            "host": [
-              "{{reviews_base_url}}"
-            ],
-            "path": [
-              "reviews"
-            ]
-          },
-          "description": "Create a new review for a room. The user id is taken from the authenticated JWT."
-        },
-        "response": []
-      },
-      {
-        "name": "Get reviews for room",
-        "request": {
-          "method": "GET",
-          "header": [
-            {
-              "key": "Authorization",
-              "value": "Bearer {{access_token}}",
-              "description": "JWT for any authenticated user."
-            }
-          ],
-          "url": {
-            "raw": "{{reviews_base_url}}/reviews/room/{{room_id}}",
-            "host": [
-              "{{reviews_base_url}}"
-            ],
-            "path": [
-              "reviews",
-              "room",
-              "{{room_id}}"
-            ]
-          },
-          "description": "List all non-hidden reviews for a given room."
-        },
-        "response": []
-      },
-      {
-        "name": "List my reviews",
-        "request": {
-          "method": "GET",
-          "header": [
-            {
-              "key": "Authorization",
-              "value": "Bearer {{access_token}}",
-              "description": "JWT for the current user."
-            }
-          ],
-          "url": {
-            "raw": "{{reviews_base_url}}/reviews/me",
-            "host": [
-              "{{reviews_base_url}}"
-            ],
-            "path": [
-              "reviews",
-              "me"
-            ]
-          },
-          "description": "Return all reviews created by the currently authenticated user."
-        },
-        "response": []
-      },
-      {
-        "name": "Update my review",
-        "request": {
-          "method": "PUT",
-          "header": [
-            {
-              "key": "Content-Type",
-              "value": "application/json"
+            "url": {
+              "raw": "{{bookings_base_url}}/api/v1/bookings/{{booking_id}}",
+              "host": [
+                "{{bookings_base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "bookings",
+                "{{booking_id}}"
+              ]
             },
-            {
-              "key": "Authorization",
-              "value": "Bearer {{access_token}}",
-              "description": "JWT for the review owner."
-            }
-          ],
-          "body": {
-            "mode": "raw",
-            "raw": "{\n  \"rating\": 5,\n  \"comment\": \"Updated: everything worked perfectly during the meeting.\"\n}"
+            "description": "Update an existing booking owned by the current user. Server returns 403 if the booking belongs to someone else."
           },
-          "url": {
-            "raw": "{{reviews_base_url}}/reviews/{{review_id}}",
-            "host": [
-              "{{reviews_base_url}}"
-            ],
-            "path": [
-              "reviews",
-              "{{review_id}}"
-            ]
-          },
-          "description": "Update the rating and/or comment of an existing review owned by the current user."
+          "response": []
         },
-        "response": []
-      },
-      {
-        "name": "Delete my review",
-        "request": {
-          "method": "DELETE",
-          "header": [
-            {
-              "key": "Authorization",
-              "value": "Bearer {{access_token}}",
-              "description": "JWT for the review owner."
-            }
-          ],
-          "url": {
-            "raw": "{{reviews_base_url}}/reviews/{{review_id}}",
-            "host": [
-              "{{reviews_base_url}}"
+        {
+          "name": "Cancel my booking",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
             ],
-            "path": [
-              "reviews",
-              "{{review_id}}"
-            ]
+            "url": {
+              "raw": "{{bookings_base_url}}/api/v1/bookings/{{booking_id}}",
+              "host": [
+                "{{bookings_base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "bookings",
+                "{{booking_id}}"
+              ]
+            },
+            "description": "Cancel a booking owned by the current user (soft delete)."
           },
-          "description": "Soft-delete one of the current user's reviews. Expected status: 204 No Content."
+          "response": []
         },
-        "response": []
-      },
-      {
-        "name": "Admin – List all reviews",
-        "request": {
-          "method": "GET",
-          "header": [
-            {
-              "key": "Authorization",
-              "value": "Bearer {{admin_token}}",
-              "description": "JWT for an admin or moderator."
-            }
-          ],
-          "url": {
-            "raw": "{{reviews_base_url}}/admin/reviews",
-            "host": [
-              "{{reviews_base_url}}"
+        {
+          "name": "List all bookings (admin/facility/auditor)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}",
+                "description": "Token for an admin, facility manager, or auditor."
+              }
             ],
-            "path": [
-              "admin",
-              "reviews"
-            ]
+            "url": {
+              "raw": "{{bookings_base_url}}/api/v1/admin/bookings",
+              "host": [
+                "{{bookings_base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "bookings"
+              ]
+            },
+            "description": "List all bookings in the system. Restricted to admin/facility_manager/auditor roles."
           },
-          "description": "List all reviews in the system for moderation/auditing purposes."
+          "response": []
         },
-        "response": []
-      },
-      {
-        "name": "Admin – List flagged reviews",
-        "request": {
-          "method": "GET",
-          "header": [
-            {
-              "key": "Authorization",
-              "value": "Bearer {{admin_token}}",
-              "description": "JWT for an admin or moderator."
-            }
-          ],
-          "url": {
-            "raw": "{{reviews_base_url}}/admin/reviews/flagged",
-            "host": [
-              "{{reviews_base_url}}"
+        {
+          "name": "Create booking with override (admin only)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
             ],
-            "path": [
-              "admin",
-              "reviews",
-              "flagged"
-            ]
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"room_id\": 1,\n  \"start_time\": \"2025-01-01T08:00:00\",\n  \"end_time\": \"2025-01-01T09:00:00\"\n}"
+            },
+            "url": {
+              "raw": "{{bookings_base_url}}/api/v1/admin/bookings/override",
+              "host": [
+                "{{bookings_base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "bookings",
+                "override"
+              ]
+            },
+            "description": "Create a booking that force-cancels conflicting reservations. Admin only."
           },
-          "description": "List reviews that have been flagged as potentially inappropriate."
+          "response": []
         },
-        "response": []
-      },
-      {
-        "name": "Admin – Flag review",
-        "request": {
-          "method": "PATCH",
-          "header": [
-            {
-              "key": "Authorization",
-              "value": "Bearer {{admin_token}}",
-              "description": "JWT for an admin or moderator."
-            }
-          ],
-          "url": {
-            "raw": "{{reviews_base_url}}/admin/reviews/{{review_id}}/flag",
-            "host": [
-              "{{reviews_base_url}}"
+        {
+          "name": "Force-cancel booking (admin only)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
             ],
-            "path": [
-              "admin",
-              "reviews",
-              "{{review_id}}",
-              "flag"
-            ]
+            "url": {
+              "raw": "{{bookings_base_url}}/api/v1/admin/bookings/{{booking_id}}/force-cancel",
+              "host": [
+                "{{bookings_base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "bookings",
+                "{{booking_id}}",
+                "force-cancel"
+              ]
+            },
+            "description": "Admin-only operation that force-cancels a booking even if it conflicts with others."
           },
-          "description": "Flag a review as potentially inappropriate. Supports both POST and PATCH methods. No request body needed."
-        },
-        "response": []
-      },
-      {
-        "name": "Admin – Unflag review",
-        "request": {
-          "method": "PATCH",
-          "header": [
-            {
-              "key": "Authorization",
-              "value": "Bearer {{admin_token}}",
-              "description": "JWT for an admin or moderator."
-            }
-          ],
-          "url": {
-            "raw": "{{reviews_base_url}}/admin/reviews/{{review_id}}/unflag",
-            "host": [
-              "{{reviews_base_url}}"
-            ],
-            "path": [
-              "admin",
-              "reviews",
-              "{{review_id}}",
-              "unflag"
-            ]
-          },
-          "description": "Clear the flagged state from a review. Supports both POST and PATCH methods. No request body needed."
-        },
-        "response": []
-      },
-      {
-        "name": "Admin – Hide review",
-        "request": {
-          "method": "PATCH",
-          "header": [
-            {
-              "key": "Authorization",
-              "value": "Bearer {{admin_token}}",
-              "description": "JWT for an admin or moderator."
-            }
-          ],
-          "url": {
-            "raw": "{{reviews_base_url}}/admin/reviews/{{review_id}}/hide",
-            "host": [
-              "{{reviews_base_url}}"
-            ],
-            "path": [
-              "admin",
-              "reviews",
-              "{{review_id}}",
-              "hide"
-            ]
-          },
-          "description": "Hide a review from public view. Supports both POST and PATCH methods. No request body needed."
-        },
-        "response": []
-      },
-      {
-        "name": "Admin – Show review",
-        "request": {
-          "method": "PATCH",
-          "header": [
-            {
-              "key": "Authorization",
-              "value": "Bearer {{admin_token}}",
-              "description": "JWT for an admin or moderator."
-            }
-          ],
-          "url": {
-            "raw": "{{reviews_base_url}}/admin/reviews/{{review_id}}/show",
-            "host": [
-              "{{reviews_base_url}}"
-            ],
-            "path": [
-              "admin",
-              "reviews",
-              "{{review_id}}",
-              "show"
-            ]
-          },
-          "description": "Make a hidden review visible again. Supports both POST and PATCH methods. No request body needed."
-        },
-        "response": []
-      }
-    ]
-  },
-  {
-    "name": "Edge Cases",
-    "description": "Targeted scenarios to validate role enforcement and validations.",
-    "item": [
-      {
-        "name": "Users - Case-insensitive duplicate username should fail",
-        "request": {
-          "method": "POST",
-          "header": [
-            { "key": "Content-Type", "value": "application/json" }
-          ],
-          "body": {
-            "mode": "raw",
-            "raw": "{\n  \"name\": \"Alice Lower\",\n  \"username\": \"edgeuser\",\n  \"email\": \"edgeuser@example.com\",\n  \"password\": \"Password123\",\n  \"role\": \"regular\"\n}"
-          },
-          "url": { "raw": "{{users_base_url}}/users/register", "host": ["{{users_base_url}}"], "path": ["users","register"] }
+          "response": []
         }
-      },
-      {
-        "name": "Users - Register same username different case -> 400",
-        "request": {
-          "method": "POST",
-          "header": [
-            { "key": "Content-Type", "value": "application/json" }
-          ],
-          "body": {
-            "mode": "raw",
-            "raw": "{\n  \"name\": \"Alice Upper\",\n  \"username\": \"EDGEUSER\",\n  \"email\": \"edgeuser2@example.com\",\n  \"password\": \"Password123\",\n  \"role\": \"regular\"\n}"
+      ]
+    },
+    {
+      "name": "Reviews",
+      "item": [
+        {
+          "name": "Create review",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "description": "JWT for a regular authenticated user."
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"room_id\": 1,\n  \"rating\": 4,\n  \"comment\": \"The room was clean and quiet. The projector worked well.\"\n}"
+            },
+            "url": {
+              "raw": "{{reviews_base_url}}/api/v1/reviews",
+              "host": [
+                "{{reviews_base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "reviews"
+              ]
+            },
+            "description": "Create a new review for a room. The user id is taken from the authenticated JWT."
           },
-          "url": { "raw": "{{users_base_url}}/users/register", "host": ["{{users_base_url}}"], "path": ["users","register"] }
+          "response": []
         },
-        "response": [],
-        "description": "Expect HTTP 400 because username matches existing user case-insensitively."
-      },
-      {
-        "name": "Bookings - Too short duration should fail",
-        "request": {
-          "method": "POST",
-          "header": [
-            { "key": "Content-Type", "value": "application/json" },
-            { "key": "Authorization", "value": "Bearer {{access_token}}" }
-          ],
-          "body": {
-            "mode": "raw",
-            "raw": "{\n  \"room_id\": 1,\n  \"start_time\": \"2025-01-01T10:00:00\",\n  \"end_time\": \"2025-01-01T10:03:00\"\n}"
+        {
+          "name": "Get reviews for room",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "description": "JWT for any authenticated user."
+              }
+            ],
+            "url": {
+              "raw": "{{reviews_base_url}}/api/v1/reviews/room/{{room_id}}",
+              "host": [
+                "{{reviews_base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "reviews",
+                "room",
+                "{{room_id}}"
+              ]
+            },
+            "description": "List all non-hidden reviews for a given room."
           },
-          "url": { "raw": "{{bookings_base_url}}/bookings", "host": ["{{bookings_base_url}}"], "path": ["bookings"] }
+          "response": []
         },
-        "description": "Expect HTTP 400 due to minimum duration validation."
-      },
-      {
-        "name": "Bookings - Check availability",
-        "request": {
-          "method": "GET",
-          "header": [
-            { "key": "Authorization", "value": "Bearer {{service_account_token}}" }
-          ],
-          "url": {
-            "raw": "{{bookings_base_url}}/bookings/check-availability?room_id={{room_id}}&start_time={{start_time}}&end_time={{end_time}}",
-            "host": ["{{bookings_base_url}}"],
-            "path": ["bookings","check-availability"],
-            "query": [
-              { "key": "room_id", "value": "{{room_id}}" },
-              { "key": "start_time", "value": "{{start_time}}" },
-              { "key": "end_time", "value": "{{end_time}}" }
-            ]
+        {
+          "name": "List my reviews",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "description": "JWT for the current user."
+              }
+            ],
+            "url": {
+              "raw": "{{reviews_base_url}}/api/v1/reviews/me",
+              "host": [
+                "{{reviews_base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "reviews",
+                "me"
+              ]
+            },
+            "description": "Return all reviews created by the currently authenticated user."
+          },
+          "response": []
+        },
+        {
+          "name": "Update my review",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "description": "JWT for the review owner."
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rating\": 5,\n  \"comment\": \"Updated: everything worked perfectly during the meeting.\"\n}"
+            },
+            "url": {
+              "raw": "{{reviews_base_url}}/api/v1/reviews/{{review_id}}",
+              "host": [
+                "{{reviews_base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "reviews",
+                "{{review_id}}"
+              ]
+            },
+            "description": "Update the rating and/or comment of an existing review owned by the current user."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete my review",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "description": "JWT for the review owner."
+              }
+            ],
+            "url": {
+              "raw": "{{reviews_base_url}}/api/v1/reviews/{{review_id}}",
+              "host": [
+                "{{reviews_base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "reviews",
+                "{{review_id}}"
+              ]
+            },
+            "description": "Soft-delete one of the current user's reviews. Expected status: 204 No Content."
+          },
+          "response": []
+        },
+        {
+          "name": "Admin \u2013 List all reviews",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}",
+                "description": "JWT for an admin or moderator."
+              }
+            ],
+            "url": {
+              "raw": "{{reviews_base_url}}/api/v1/admin/reviews",
+              "host": [
+                "{{reviews_base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "reviews"
+              ]
+            },
+            "description": "List all reviews in the system for moderation/auditing purposes."
+          },
+          "response": []
+        },
+        {
+          "name": "Admin \u2013 List flagged reviews",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}",
+                "description": "JWT for an admin or moderator."
+              }
+            ],
+            "url": {
+              "raw": "{{reviews_base_url}}/api/v1/admin/reviews/flagged",
+              "host": [
+                "{{reviews_base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "reviews",
+                "flagged"
+              ]
+            },
+            "description": "List reviews that have been flagged as potentially inappropriate."
+          },
+          "response": []
+        },
+        {
+          "name": "Admin \u2013 Flag review",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}",
+                "description": "JWT for an admin or moderator."
+              }
+            ],
+            "url": {
+              "raw": "{{reviews_base_url}}/api/v1/admin/reviews/{{review_id}}/flag",
+              "host": [
+                "{{reviews_base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "reviews",
+                "{{review_id}}",
+                "flag"
+              ]
+            },
+            "description": "Flag a review as potentially inappropriate. Supports both POST and PATCH methods. No request body needed."
+          },
+          "response": []
+        },
+        {
+          "name": "Admin \u2013 Unflag review",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}",
+                "description": "JWT for an admin or moderator."
+              }
+            ],
+            "url": {
+              "raw": "{{reviews_base_url}}/api/v1/admin/reviews/{{review_id}}/unflag",
+              "host": [
+                "{{reviews_base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "reviews",
+                "{{review_id}}",
+                "unflag"
+              ]
+            },
+            "description": "Clear the flagged state from a review. Supports both POST and PATCH methods. No request body needed."
+          },
+          "response": []
+        },
+        {
+          "name": "Admin \u2013 Hide review",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}",
+                "description": "JWT for an admin or moderator."
+              }
+            ],
+            "url": {
+              "raw": "{{reviews_base_url}}/api/v1/admin/reviews/{{review_id}}/hide",
+              "host": [
+                "{{reviews_base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "reviews",
+                "{{review_id}}",
+                "hide"
+              ]
+            },
+            "description": "Hide a review from public view. Supports both POST and PATCH methods. No request body needed."
+          },
+          "response": []
+        },
+        {
+          "name": "Admin \u2013 Show review",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}",
+                "description": "JWT for an admin or moderator."
+              }
+            ],
+            "url": {
+              "raw": "{{reviews_base_url}}/api/v1/admin/reviews/{{review_id}}/show",
+              "host": [
+                "{{reviews_base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "reviews",
+                "{{review_id}}",
+                "show"
+              ]
+            },
+            "description": "Make a hidden review visible again. Supports both POST and PATCH methods. No request body needed."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Edge Cases",
+      "description": "Targeted scenarios to validate role enforcement and validations.",
+      "item": [
+        {
+          "name": "Users - Case-insensitive duplicate username should fail",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Alice Lower\",\n  \"username\": \"edgeuser\",\n  \"email\": \"edgeuser@example.com\",\n  \"password\": \"Password123\",\n  \"role\": \"regular\"\n}"
+            },
+            "url": {
+              "raw": "{{users_base_url}}/api/v1/users/register",
+              "host": [
+                "{{users_base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "register"
+              ]
+            }
           }
         },
-        "description": "Expect 200 with {\"available\": true/false}."
-      },
-      {
-        "name": "Rooms - Duplicate name rejected",
-        "request": {
-          "method": "POST",
-          "header": [
-            { "key": "Content-Type", "value": "application/json" },
-            { "key": "Authorization", "value": "Bearer {{admin_token}}" }
-          ],
-          "body": {
-            "mode": "raw",
-            "raw": "{\n  \"name\": \"Room Duplicate\",\n  \"capacity\": 5,\n  \"equipment\": [],\n  \"location\": \"HQ\",\n  \"status\": \"active\"\n}"
+        {
+          "name": "Users - Register same username different case -> 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Alice Upper\",\n  \"username\": \"EDGEUSER\",\n  \"email\": \"edgeuser2@example.com\",\n  \"password\": \"Password123\",\n  \"role\": \"regular\"\n}"
+            },
+            "url": {
+              "raw": "{{users_base_url}}/api/v1/users/register",
+              "host": [
+                "{{users_base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "register"
+              ]
+            }
           },
-          "url": { "raw": "{{rooms_base_url}}/rooms", "host": ["{{rooms_base_url}}"], "path": ["rooms"] }
+          "response": [],
+          "description": "Expect HTTP 400 because username matches existing user case-insensitively."
         },
-        "description": "Run twice; second call should return 400 because name exists (case-insensitive)."
-      },
-      {
-        "name": "Reviews - Auditor cannot create review",
-        "request": {
-          "method": "POST",
-          "header": [
-            { "key": "Content-Type", "value": "application/json" },
-            { "key": "Authorization", "value": "Bearer {{auditor_token}}" }
-          ],
-          "body": {
-            "mode": "raw",
-            "raw": "{\n  \"room_id\": 1,\n  \"rating\": 5,\n  \"comment\": \"Auditor attempt\"\n}"
+        {
+          "name": "Bookings - Too short duration should fail",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"room_id\": 1,\n  \"start_time\": \"2025-01-01T10:00:00\",\n  \"end_time\": \"2025-01-01T10:03:00\"\n}"
+            },
+            "url": {
+              "raw": "{{bookings_base_url}}/api/v1/bookings",
+              "host": [
+                "{{bookings_base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "bookings"
+              ]
+            }
           },
-          "url": { "raw": "{{reviews_base_url}}/reviews", "host": ["{{reviews_base_url}}"], "path": ["reviews"] }
+          "description": "Expect HTTP 400 due to minimum duration validation."
         },
-        "description": "Expect 403 because auditors are read-only."
-      }
-    ]
-  }
-
+        {
+          "name": "Bookings - Check availability",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{service_account_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{bookings_base_url}}/api/v1/bookings/check-availability?room_id={{room_id}}&start_time={{start_time}}&end_time={{end_time}}",
+              "host": [
+                "{{bookings_base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "bookings",
+                "check-availability"
+              ],
+              "query": [
+                {
+                  "key": "room_id",
+                  "value": "{{room_id}}"
+                },
+                {
+                  "key": "start_time",
+                  "value": "{{start_time}}"
+                },
+                {
+                  "key": "end_time",
+                  "value": "{{end_time}}"
+                }
+              ]
+            }
+          },
+          "description": "Expect 200 with {\"available\": true/false}."
+        },
+        {
+          "name": "Rooms - Duplicate name rejected",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Room Duplicate\",\n  \"capacity\": 5,\n  \"equipment\": [],\n  \"location\": \"HQ\",\n  \"status\": \"active\"\n}"
+            },
+            "url": {
+              "raw": "{{rooms_base_url}}/api/v1/rooms",
+              "host": [
+                "{{rooms_base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "rooms"
+              ]
+            }
+          },
+          "description": "Run twice; second call should return 400 because name exists (case-insensitive)."
+        },
+        {
+          "name": "Reviews - Auditor cannot create review",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auditor_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"room_id\": 1,\n  \"rating\": 5,\n  \"comment\": \"Auditor attempt\"\n}"
+            },
+            "url": {
+              "raw": "{{reviews_base_url}}/api/v1/reviews",
+              "host": [
+                "{{reviews_base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "reviews"
+              ]
+            }
+          },
+          "description": "Expect 403 because auditors are read-only."
+        }
+      ]
+    }
   ]
 }
