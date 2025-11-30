@@ -262,3 +262,25 @@ class RateLimitExceededError(AppError):
             message=message,
             details=details,
         )
+
+
+class NotificationError(AppError):
+    """
+    Raised when notification delivery fails.
+
+    HTTP Status: 502
+    Error Code: NOTIFICATION_FAILED
+    """
+
+    def __init__(
+        self,
+        message: str = "Notification delivery failed.",
+        *,
+        details: Optional[Dict[str, Any]] = None,
+    ):
+        super().__init__(
+            http_status=502,
+            error_code="NOTIFICATION_FAILED",
+            message=message,
+            details=details,
+        )
