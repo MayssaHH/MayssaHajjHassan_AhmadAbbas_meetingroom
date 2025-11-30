@@ -29,7 +29,7 @@ def ensure_user_exists(user_id: int) -> bool:
         service_name="users",
     )
     try:
-        resp = client.get(f"/users/id/{user_id}")
+        resp = client.get(f"/api/v1/users/id/{user_id}")
         if resp.status_code == 404:
             return False
         resp.raise_for_status()

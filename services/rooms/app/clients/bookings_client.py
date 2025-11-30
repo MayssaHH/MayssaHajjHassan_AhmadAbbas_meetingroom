@@ -38,7 +38,7 @@ def is_room_currently_booked(room_id: int, *, start_time: datetime | None = None
     )
     try:
         resp = client.get(
-            "/bookings/check-availability",
+            "/api/v1/bookings/check-availability",
             params={
                 "room_id": room_id,
                 "start_time": start_time.isoformat(),

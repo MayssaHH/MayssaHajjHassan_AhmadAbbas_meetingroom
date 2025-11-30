@@ -29,7 +29,7 @@ def ensure_room_is_active(room_id: int) -> bool:
         service_name="rooms",
     )
     try:
-        resp = client.get(f"/rooms/{room_id}")
+        resp = client.get(f"/api/v1/rooms/{room_id}")
         if resp.status_code == 404:
             return False
         resp.raise_for_status()

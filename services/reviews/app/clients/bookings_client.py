@@ -29,7 +29,7 @@ def user_has_booking_for_room(user_id: int, room_id: int) -> bool:
         service_name="bookings",
     )
     try:
-        resp = client.get(f"/admin/bookings/user/{user_id}/room/{room_id}")
+        resp = client.get(f"/api/v1/admin/bookings/user/{user_id}/room/{room_id}")
         resp.raise_for_status()
         data = resp.json()
         return len(data) > 0

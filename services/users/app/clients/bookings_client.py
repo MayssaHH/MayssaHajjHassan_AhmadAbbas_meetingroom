@@ -29,7 +29,7 @@ def fetch_user_bookings(user_id: int) -> List[Dict[str, Any]]:
         service_name="bookings",
     )
     try:
-        resp = client.get(f"/admin/bookings/user/{user_id}")
+        resp = client.get(f"/api/v1/admin/bookings/user/{user_id}")
         resp.raise_for_status()
         return resp.json()
     except httpx.HTTPError as exc:
