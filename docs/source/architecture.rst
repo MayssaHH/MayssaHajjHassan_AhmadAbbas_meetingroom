@@ -56,4 +56,11 @@ moderation endpoints for flagging, hiding, and restoring reviews. It is called
 by clients directly and relies on shared authentication and RBAC logic to
 enforce permissions for regular users, moderators, and admins.
 
+Deployment View
+---------------
+
+The system is deployed as five Docker containers (database + four services).
+For details on ports, container names, and how to run the stack, see
+:doc:`deployment_docker`.
+
 
