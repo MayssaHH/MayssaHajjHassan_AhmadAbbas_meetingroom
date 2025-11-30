@@ -98,8 +98,8 @@ def register_user(
 
     Raises
     ------
-    ValueError
-        If the username or email is already taken.
+    BadRequestError
+        If the username or email is already taken, or if password validation fails.
     """
     validate_password_strength(password)
     normalized_role = normalize_role(role)
@@ -141,8 +141,8 @@ def authenticate_user(db: Session, *, username: str, password: str) -> User:
 
     Raises
     ------
-    ValueError
-        If the credentials are invalid.
+    UnauthorizedError
+        If the credentials are invalid, user not found, or account is locked.
     """
     normalized_username = username.lower()
     if _failed_attempts[normalized_username] >= _MAX_ATTEMPTS:

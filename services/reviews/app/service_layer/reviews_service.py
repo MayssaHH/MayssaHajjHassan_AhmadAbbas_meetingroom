@@ -69,7 +69,19 @@ def create_review(
     * optional booking check (via Bookings client),
     * comment sanitization.
 
-    Raises :class:`ValueError` for invalid data.
+    Returns
+    -------
+    Review
+        The newly created review.
+
+    Raises
+    ------
+    NotFoundError
+        If the user or room does not exist, or room is not active.
+    ForbiddenError
+        If a booking is required but the user has no booking for the room.
+    BadRequestError
+        If the comment is empty after sanitization or contains profanity.
     """
     settings = get_settings()
     if not users_client.ensure_user_exists(author_user_id):
@@ -111,6 +123,16 @@ def update_review(
 
     Only non-``None`` fields are applied. Comment updates are sanitized
     using the same logic as in :func:`create_review`.
+
+    Returns
+    -------
+    Review
+        The updated review.
+
+    Raises
+    ------
+    BadRequestError
+        If the comment is empty after sanitization.
     """
     if payload.rating is not None:
         review.rating = payload.rating

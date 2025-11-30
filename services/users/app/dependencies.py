@@ -60,7 +60,7 @@ def get_current_user(
 
     Raises
     ------
-    HTTPException
+    UnauthorizedError
         If the token is invalid or the user does not exist.
     """
     try:

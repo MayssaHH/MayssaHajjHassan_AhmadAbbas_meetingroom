@@ -41,6 +41,11 @@ def _equipment_csv_to_list(equipment_csv: str) -> list[str]:
 def create_room(db: Session, payload: RoomCreate) -> Room:
     """
     Create a new room based on the given payload.
+
+    Raises
+    ------
+    BadRequestError
+        If the room name is already in use.
     """
     name = payload.name.strip()
     location = payload.location.strip()
@@ -66,6 +71,11 @@ def update_room(db: Session, room_id: int, payload: RoomUpdate) -> Optional[Room
     Apply partial updates to an existing room.
 
     Returns ``None`` if the room does not exist.
+
+    Raises
+    ------
+    BadRequestError
+        If the new room name is already in use by another room.
     """
     room = rooms_repository.get_room_by_id(db, room_id)
     if room is None:

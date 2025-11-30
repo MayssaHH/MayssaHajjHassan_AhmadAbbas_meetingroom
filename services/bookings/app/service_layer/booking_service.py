@@ -77,6 +77,19 @@ def create_booking(
         creating the new booking. This flag is reserved for administrative
         roles and is expected to be gated at the API layer.
 
+    Returns
+    -------
+    Booking
+        The newly created booking.
+
+    Raises
+    ------
+    BadRequestError
+        If the time range is invalid (start >= end, duration too short/long).
+    NotFoundError
+        If the user or room does not exist, or room is not active.
+    ConflictError
+        If there are conflicting bookings and force_override is False.
     """
     start_time, end_time = _normalize_and_validate_time_range(start_time, end_time)
     _ensure_user_exists(db, user_id)
@@ -187,14 +200,21 @@ def update_booking_time(
     The booking owner may update their own booking. Administrative roles may
     update any booking.
 
+    Returns
+    -------
+    Booking
+        The updated booking.
+
     Raises
     ------
-    BookingPermissionError
+    BadRequestError
+        If the time range is invalid (start >= end, duration too short/long).
+    NotFoundError
+        If the booking does not exist.
+    ForbiddenError
         If the caller is neither the owner nor an administrator.
-    BookingConflictError
+    ConflictError
         If the new interval conflicts with other bookings.
-    ValueError
-        If the time range is invalid.
     """
     start_time, end_time = _normalize_and_validate_time_range(start_time, end_time)
 
@@ -240,9 +260,16 @@ def cancel_booking(
         If ``True``, the cancellation is treated as an administrative override.
         When ``False``, only the owner can cancel their own booking.
 
+    Returns
+    -------
+    Booking
+        The cancelled booking.
+
     Raises
     ------
-    BookingPermissionError
+    NotFoundError
+        If the booking does not exist.
+    ForbiddenError
         If the caller is neither the owner nor (for forced cancels) an admin.
     """
     booking = booking_repository.get_booking_by_id(db, booking_id)
