@@ -12,6 +12,7 @@ from datetime import datetime
 from typing import List, Optional
 
 from pydantic import BaseModel, Field, ConfigDict, field_validator
+from typing import Literal
 
 
 class RoomBase(BaseModel):
@@ -26,7 +27,7 @@ class RoomBase(BaseModel):
         default_factory=list,
         description="List of equipment items available in the room.",
     )
-    status: str = Field(
+    status: Literal["active", "out_of_service"] = Field(
         default="active",
         description="Static status of the room (e.g. active, out_of_service).",
     )
@@ -51,7 +52,7 @@ class RoomUpdate(BaseModel):
     location: Optional[str] = Field(default=None, max_length=100)
     capacity: Optional[int] = Field(default=None, ge=1)
     equipment: Optional[List[str]] = None
-    status: Optional[str] = None
+    status: Optional[Literal["active", "out_of_service"]] = None
 
 
 class RoomRead(RoomBase):

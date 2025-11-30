@@ -14,35 +14,59 @@ This module will be responsible for:
   service account token to outgoing HTTP requests.
 """
 
-from typing import Optional
+from __future__ import annotations
+
+import time
+from typing import Optional, Tuple
+
+from common.auth import create_access_token, verify_access_token
+from common.config import get_settings
+from common.logging_utils import get_logger
 
 
 _SERVICE_ACCOUNT_TOKEN: Optional[str] = None
+_SERVICE_ACCOUNT_EXP: Optional[float] = None
+_logger = get_logger(__name__)
 
 
-def get_service_account_token() -> str:
+def _generate_token() -> Tuple[str, float]:
     """
-    Return the current service account JWT token.
+    Create a short-lived service account token.
 
-    Returns
-    -------
-    str
-        The service account access token as a string.
-
-    Notes
-    -----
-    In future commits this function will:
-
-    * Detect when the token is missing or expired.
-    * Perform a login request to the Users service using the configured
-      service account username and password.
-    * Cache the token in the private module-level variable
-      ``_SERVICE_ACCOUNT_TOKEN``.
+    We mint the token locally using the configured service-account username and
+    the ``service_account`` role so that inter-service calls can authenticate
+    without requiring a live Users login endpoint. The subject is set to ``0``
+    to satisfy int conversions in downstream dependencies.
     """
-    if _SERVICE_ACCOUNT_TOKEN is None:
-        
-        raise RuntimeError(
-            "Service account token is not initialized yet. "
-            "Implementation will be provided in a later commit."
-        )
+    settings = get_settings()
+    token = create_access_token(
+        {"username": settings.service_account_username},
+        subject="0",
+        role="service_account",
+        expires_delta=None,
+    )
+    payload = verify_access_token(token)
+    exp_ts = payload.get("exp", time.time() + settings.access_token_expire_minutes * 60)
+    return token, float(exp_ts)
+
+
+def get_service_account_token(force_refresh: bool = False) -> str:
+    """
+    Return a cached service account JWT token, refreshing when near expiry.
+    """
+    global _SERVICE_ACCOUNT_TOKEN, _SERVICE_ACCOUNT_EXP  # noqa: PLW0603
+    settings = get_settings()
+    if not settings.service_account_enabled:
+        raise RuntimeError("Service account usage is disabled by configuration.")
+
+    now = time.time()
+    refresh_threshold = 30  # seconds before expiry
+    if (
+        force_refresh
+        or _SERVICE_ACCOUNT_TOKEN is None
+        or _SERVICE_ACCOUNT_EXP is None
+        or (_SERVICE_ACCOUNT_EXP - now) < refresh_threshold
+    ):
+        _SERVICE_ACCOUNT_TOKEN, _SERVICE_ACCOUNT_EXP = _generate_token()
+        _logger.info("Refreshed service account token")
     return _SERVICE_ACCOUNT_TOKEN

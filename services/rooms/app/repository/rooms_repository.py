@@ -9,6 +9,7 @@ logic and HTTP concerns.
 from __future__ import annotations
 
 from typing import List, Optional
+from sqlalchemy import func, and_
 
 from sqlalchemy.orm import Session
 
@@ -22,12 +23,26 @@ def get_room_by_id(db: Session, room_id: int) -> Optional[Room]:
     return db.query(Room).filter(Room.id == room_id).first()
 
 
+def get_room_by_name(db: Session, name: str) -> Optional[Room]:
+    """
+    Retrieve a room by its unique name (case-insensitive).
+    """
+    return (
+        db.query(Room)
+        .filter(func.lower(Room.name) == func.lower(name))
+        .first()
+    )
+
+
 def list_rooms(
     db: Session,
     *,
     min_capacity: Optional[int] = None,
     location: Optional[str] = None,
     equipment: Optional[str] = None,
+    equipment_list: Optional[List[str]] = None,
+    offset: int = 0,
+    limit: Optional[int] = None,
 ) -> List[Room]:
     """
     Return rooms matching the provided filters.
@@ -52,13 +67,23 @@ def list_rooms(
         query = query.filter(Room.capacity >= min_capacity)
 
     if location is not None:
-        query = query.filter(Room.location == location)
+        query = query.filter(func.lower(Room.location) == func.lower(location))
 
     if equipment is not None:
         pattern = f"%{equipment}%"
         query = query.filter(Room.equipment.ilike(pattern))
 
-    return query.order_by(Room.id.asc()).all()
+    if equipment_list:
+        for item in equipment_list:
+            pattern = f"%{item}%"
+            query = query.filter(Room.equipment.ilike(pattern))
+
+    query = query.order_by(Room.id.asc())
+    if offset:
+        query = query.offset(offset)
+    if limit:
+        query = query.limit(limit)
+    return query.all()
 
 
 def create_room(

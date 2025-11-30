@@ -1,20 +1,40 @@
 """
-Thin Users service client for the Reviews service.
-
-For Commit 6 this module only exposes a stub implementation that always
-considers the user as valid. In later commits it will be extended to
-perform real HTTP requests using :mod:`common.http_client`.
+Users service client for the Reviews service.
 """
 
 from __future__ import annotations
+
+import httpx
+
+from common.config import get_settings
+from common.http_client import ServiceHTTPClient
+from common.logging_utils import get_logger
+from common.service_account import get_service_account_token
+
+_logger = get_logger(__name__)
 
 
 def ensure_user_exists(user_id: int) -> bool:
     """
     Indicate whether the given user exists.
 
-    Returns ``True`` in Commit 6. This keeps the API stable while
-    allowing validation to be tightened later without breaking callers.
+    Falls back to ``True`` when stub fallback is enabled.
     """
-    # TODO: Replace stub with real HTTP call to the Users service.
-    return True
+    settings = get_settings()
+    token = get_service_account_token()
+    client = ServiceHTTPClient(
+        settings.users_service_url,
+        timeout=settings.http_client_timeout,
+        default_headers={"Authorization": f"Bearer {token}"},
+    )
+    try:
+        resp = client.get(f"/users/id/{user_id}")
+        if resp.status_code == 404:
+            return False
+        resp.raise_for_status()
+        return True
+    except httpx.HTTPError as exc:
+        if settings.client_stub_fallback:
+            _logger.warning("Fallback allow for user existence (%s): %s", user_id, exc)
+            return True
+        raise

@@ -17,6 +17,7 @@ from services.users.app.dependencies import get_db, require_roles
 from services.users.app.schemas import RoleLiteral
 from services.users.app.repository import user_repository
 from services.users.app.service_layer import user_service
+from services.users.app.clients import bookings_client
 
 
 router = APIRouter()
@@ -36,7 +37,7 @@ def update_user_role(
     user_id: int,
     payload: RoleUpdatePayload,
     db: Session = Depends(get_db),
-    _: User = Depends(require_roles([ROLE_ADMIN])),
+    current_admin: User = Depends(require_roles([ROLE_ADMIN])),
 ):
     """
     Update the role of a user identified by ``user_id``.
@@ -55,6 +56,12 @@ def update_user_role(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(exc),
         ) from exc
+
+    if user.id == current_admin.id and normalized_role != ROLE_ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Admins cannot demote themselves.",
+        )
 
     user.role = normalized_role
     user_repository.save_user(db, user)
@@ -80,4 +87,41 @@ def delete_user_as_admin(
         )
 
     user_repository.delete_user(db, user)
+    return None
+
+
+@router.get("/{user_id}/bookings", status_code=status.HTTP_200_OK)
+def get_user_booking_history(
+    user_id: int,
+    _: User = Depends(require_roles([ROLE_ADMIN])),
+):
+    """
+    Admin-only: view a user's booking history via Bookings service.
+    """
+    return bookings_client.fetch_user_bookings(user_id)
+
+
+@router.post("/{user_id}/reset-password", status_code=status.HTTP_204_NO_CONTENT)
+def reset_password(
+    user_id: int,
+    new_password: str,
+    db: Session = Depends(get_db),
+    _: User = Depends(require_roles([ROLE_ADMIN])),
+):
+    """
+    Admin-only password reset for a user.
+    """
+    user = user_repository.get_user_by_id(db, user_id)
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found.",
+        )
+    try:
+        user_service.change_password(db, user, new_password)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        )
     return None

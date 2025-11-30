@@ -16,7 +16,13 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from common.auth import verify_access_token
-from common.rbac import is_role_allowed, ROLE_ADMIN, ROLE_FACILITY_MANAGER, ROLE_AUDITOR
+from common.rbac import (
+    is_role_allowed,
+    ROLE_ADMIN,
+    ROLE_FACILITY_MANAGER,
+    ROLE_AUDITOR,
+    ROLE_SERVICE_ACCOUNT,
+)
 from db.init_db import get_db as _get_db
 
 
@@ -112,3 +118,4 @@ def require_roles(allowed_roles: List[str]) -> Callable[[CurrentUser], CurrentUs
 # Convenience aliases for later use
 ADMIN_ROLES = [ROLE_ADMIN]
 ADMIN_OR_FM_OR_AUDITOR_ROLES = [ROLE_ADMIN, ROLE_FACILITY_MANAGER, ROLE_AUDITOR]
+ADMIN_FM_AUDITOR_SERVICE = [ROLE_ADMIN, ROLE_FACILITY_MANAGER, ROLE_AUDITOR, ROLE_SERVICE_ACCOUNT]

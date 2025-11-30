@@ -1,36 +1,38 @@
 """
 Client utilities for interacting with the Bookings service.
-
-The Users service will use this client to fetch booking history for a given
-user when an administrator requests it.
-
-The actual HTTP calls will be implemented in a later commit using the
-shared HTTP client utilities from :mod:`common.http_client`.
 """
 
+from __future__ import annotations
+
 from typing import Any, Dict, List
+
+import httpx
+
+from common.config import get_settings
+from common.http_client import ServiceHTTPClient
+from common.logging_utils import get_logger
+from common.service_account import get_service_account_token
+
+_logger = get_logger(__name__)
 
 
 def fetch_user_bookings(user_id: int) -> List[Dict[str, Any]]:
     """
     Retrieve the booking history for a specific user from the Bookings service.
-
-    Parameters
-    ----------
-    user_id:
-        The identifier of the user whose bookings are requested.
-
-    Returns
-    -------
-    list of dict
-        A list of booking records associated with the user.
-
-    Notes
-    -----
-    The implementation will:
-
-    * Obtain a service account token from :mod:`common.service_account`.
-    * Perform an HTTP request to the Bookings service.
-    * Map the response into a Python-friendly structure.
     """
-    raise NotImplementedError("fetch_user_bookings is not implemented yet.")
+    settings = get_settings()
+    token = get_service_account_token()
+    client = ServiceHTTPClient(
+        settings.bookings_service_url,
+        timeout=settings.http_client_timeout,
+        default_headers={"Authorization": f"Bearer {token}"},
+    )
+    try:
+        resp = client.get(f"/admin/bookings/user/{user_id}")
+        resp.raise_for_status()
+        return resp.json()
+    except httpx.HTTPError as exc:
+        if settings.client_stub_fallback:
+            _logger.warning("Fallback to empty booking history for user %s: %s", user_id, exc)
+            return []
+        raise

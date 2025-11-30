@@ -18,7 +18,7 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
 from common.auth import verify_access_token
-from common.rbac import is_role_allowed
+from common.rbac import is_role_allowed, ROLE_SERVICE_ACCOUNT
 from db.init_db import get_db as _get_db
 from db.schema import User
 
@@ -77,6 +77,18 @@ def get_current_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Malformed token payload.",
         )
+
+    if role == ROLE_SERVICE_ACCOUNT:
+        # Synthetic user for inter-service calls; not persisted.
+        service_user = User(
+            id=0,
+            name="Service Account",
+            username="service_account",
+            email="service_account@example.com",
+            password_hash="",
+            role=ROLE_SERVICE_ACCOUNT,
+        )
+        return service_user
 
     user = db.get(User, int(subject))
     if user is None:

@@ -11,7 +11,7 @@ The functions are intentionally left as stubs in the first commit and will
 be fully implemented in later commits when the Users service is developed.
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, Dict, Any
 
 
@@ -71,10 +71,14 @@ def create_access_token(
     if expires_delta is None:
         expires_delta = timedelta(minutes=settings.access_token_expire_minutes)
 
-    expire = datetime.utcnow() + expires_delta
+    expire = datetime.now(timezone.utc) + expires_delta
     claims["sub"] = str(claims["sub"])
     claims["role"] = str(claims["role"])
     claims["exp"] = expire
+    if settings.jwt_issuer:
+        claims["iss"] = settings.jwt_issuer
+    if settings.jwt_audience:
+        claims["aud"] = settings.jwt_audience
 
     encoded_jwt = jwt.encode(
         claims,
@@ -111,10 +115,16 @@ def verify_access_token(token: str) -> dict:
     
     settings = get_settings()
     try:
+        options = {"verify_aud": bool(settings.jwt_audience)}
+        if settings.jwt_leeway_seconds:
+            options["leeway"] = settings.jwt_leeway_seconds
         payload = jwt.decode(
             token,
             settings.jwt_secret_key,
             algorithms=[settings.jwt_algorithm],
+            audience=settings.jwt_audience if settings.jwt_audience else None,
+            issuer=settings.jwt_issuer if settings.jwt_issuer else None,
+            options=options,
         )
         return payload
     except JWTError as exc:  # pragma: no cover - defensive

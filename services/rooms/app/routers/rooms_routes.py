@@ -8,6 +8,7 @@ This router is mounted under the ``/rooms`` prefix in
 from __future__ import annotations
 
 from typing import List, Optional
+from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
@@ -35,7 +36,13 @@ def create_room(
     Only users with the ``admin`` or ``facility_manager`` role are
     allowed to access this endpoint.
     """
-    room = rooms_service.create_room(db, payload)
+    try:
+        room = rooms_service.create_room(db, payload)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        )
     return room
 
 
@@ -56,6 +63,12 @@ def list_rooms(
         default=None,
         description="If provided, only rooms whose equipment includes this token are returned.",
     ),
+    equipment_list: Optional[List[str]] = Query(
+        default=None,
+        description="Multiple equipment tokens that must all be present.",
+    ),
+    offset: int = 0,
+    limit: Optional[int] = None,
     db: Session = Depends(get_db),
     _: CurrentUser = Depends(get_current_user),
 ):
@@ -67,6 +80,9 @@ def list_rooms(
         min_capacity=min_capacity,
         location=location,
         equipment=equipment,
+        equipment_list=equipment_list,
+        offset=offset,
+        limit=limit,
     )
     return rooms
 
@@ -108,7 +124,13 @@ def update_room(
     Only room managers (admins or facility managers) are allowed to
     call this endpoint.
     """
-    room = rooms_service.update_room(db, room_id, payload)
+    try:
+        room = rooms_service.update_room(db, room_id, payload)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        )
     if room is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -152,6 +174,8 @@ def get_room_status(
     room_id: int,
     db: Session = Depends(get_db),
     _: CurrentUser = Depends(get_current_user),
+    start_time: datetime | None = Query(None),
+    end_time: datetime | None = Query(None),
 ):
     """
     Return the static and dynamic status of a room.
@@ -159,7 +183,7 @@ def get_room_status(
     The dynamic part (whether the room is currently booked) is a stub in
     Commit 4 and always returns ``False``.
     """
-    status_obj = rooms_service.get_room_status(db, room_id)
+    status_obj = rooms_service.get_room_status(db, room_id, start_time=start_time, end_time=end_time)
     if status_obj is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

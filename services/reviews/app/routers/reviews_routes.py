@@ -17,7 +17,10 @@ from ..dependencies import (
     CurrentUser,
     get_db,
     require_authenticated,
+    require_read_access,
+    allow_owner_or_admin_or_moderator,
 )
+from common.rbac import ROLE_AUDITOR
 from ..service_layer import reviews_service
 
 router = APIRouter(prefix="/reviews", tags=["reviews"])
@@ -39,6 +42,11 @@ def create_review(
     Any authenticated user may create a review. Input data is validated
     and sanitized before being stored.
     """
+    if current_user.role == ROLE_AUDITOR:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Auditors cannot create reviews.",
+        )
     try:
         review = reviews_service.create_review(
             db,
@@ -60,7 +68,7 @@ def create_review(
 def get_reviews_for_room(
     room_id: int,
     db: Session = Depends(get_db),
-    _: CurrentUser = Depends(require_authenticated),
+    _: CurrentUser = Depends(require_read_access),
 ):
     """
     Return all reviews associated with the given room.
@@ -94,11 +102,7 @@ def update_review(
             detail="Review not found.",
         )
 
-    if review.user_id != current_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You are not allowed to edit this review.",
-        )
+    allow_owner_or_admin_or_moderator(review.user_id, current_user)
 
     try:
         review = reviews_service.update_review(db, review=review, payload=payload)
@@ -131,11 +135,7 @@ def delete_review(
             detail="Review not found.",
         )
 
-    if review.user_id != current_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You are not allowed to delete this review.",
-        )
+    allow_owner_or_admin_or_moderator(review.user_id, current_user)
 
     from ..repository import reviews_repository
 

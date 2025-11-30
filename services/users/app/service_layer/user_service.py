@@ -7,6 +7,8 @@ the repository layer.
 """
 
 from typing import List
+import re
+from collections import defaultdict
 
 from sqlalchemy.orm import Session
 
@@ -35,6 +37,9 @@ ROLE_ALIASES = {
     "facility": ROLE_FACILITY_MANAGER,
 }
 
+_failed_attempts: defaultdict[str, int] = defaultdict(int)
+_MAX_ATTEMPTS = 5
+
 
 def normalize_role(role: str) -> str:
     """
@@ -46,6 +51,16 @@ def normalize_role(role: str) -> str:
             "Invalid role. Allowed roles are: admin, regular, facility, moderator, auditor, service_account."
         )
     return normalized
+
+
+def validate_password_strength(password: str) -> None:
+    """
+    Enforce a minimal password policy.
+    """
+    if len(password) < 8:
+        raise ValueError("Password must be at least 8 characters long.")
+    if not re.search(r"[A-Za-z]", password) or not re.search(r"[0-9]", password):
+        raise ValueError("Password must contain letters and digits.")
 
 
 def register_user(
@@ -85,6 +100,7 @@ def register_user(
     ValueError
         If the username or email is already taken.
     """
+    validate_password_strength(password)
     normalized_role = normalize_role(role)
 
     if user_repository.get_user_by_username(db, username=username):
@@ -127,13 +143,20 @@ def authenticate_user(db: Session, *, username: str, password: str) -> User:
     ValueError
         If the credentials are invalid.
     """
+    normalized_username = username.lower()
+    if _failed_attempts[normalized_username] >= _MAX_ATTEMPTS:
+        raise ValueError("Too many failed attempts. Try again later.")
+
     user = user_repository.get_user_by_username(db, username=username)
     if user is None:
+        _failed_attempts[normalized_username] += 1
         raise ValueError("Invalid username or password.")
 
     if not verify_password(password, user.password_hash):
+        _failed_attempts[normalized_username] += 1
         raise ValueError("Invalid username or password.")
 
+    _failed_attempts[normalized_username] = 0
     return user
 
 
@@ -159,3 +182,12 @@ def list_users(db: Session) -> List[User]:
     List all users for administrative or auditing purposes.
     """
     return user_repository.list_all_users(db)
+
+
+def change_password(db: Session, user: User, new_password: str) -> User:
+    """
+    Update the password for the given user.
+    """
+    validate_password_strength(new_password)
+    user.password_hash = get_password_hash(new_password)
+    return user_repository.save_user(db, user)

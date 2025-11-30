@@ -8,6 +8,7 @@ This module encapsulates all direct database interactions involving the
 from typing import List, Optional
 
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 
 from db.schema import User
 
@@ -73,14 +74,22 @@ def get_user_by_username(db_session: Session, username: str) -> Optional[User]:
     User or None
         The user if found, otherwise ``None``.
     """
-    return db_session.query(User).filter(User.username == username).first()
+    return (
+        db_session.query(User)
+        .filter(func.lower(User.username) == func.lower(username))
+        .first()
+    )
 
 
 def get_user_by_email(db_session: Session, email: str) -> Optional[User]:
     """
     Retrieve a user by their unique email address.
     """
-    return db_session.query(User).filter(User.email == email).first()
+    return (
+        db_session.query(User)
+        .filter(func.lower(User.email) == func.lower(email))
+        .first()
+    )
 
 
 def get_user_by_id(db_session: Session, user_id: int) -> Optional[User]:
@@ -90,11 +99,16 @@ def get_user_by_id(db_session: Session, user_id: int) -> Optional[User]:
     return db_session.get(User, user_id)
 
 
-def list_all_users(db_session: Session) -> List[User]:
+def list_all_users(db_session: Session, *, offset: int = 0, limit: Optional[int] = None) -> List[User]:
     """
     Return all users stored in the database.
     """
-    return db_session.query(User).order_by(User.id).all()
+    query = db_session.query(User).order_by(User.id)
+    if offset:
+        query = query.offset(offset)
+    if limit:
+        query = query.limit(limit)
+    return query.all()
 
 
 def delete_user(db_session: Session, user: User) -> None:

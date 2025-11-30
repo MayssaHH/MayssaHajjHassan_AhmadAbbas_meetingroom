@@ -9,7 +9,7 @@ These routes allow authenticated users to:
 """
 
 from datetime import datetime
-from typing import List
+from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
@@ -72,11 +72,18 @@ def create_booking(
 def list_my_bookings(
     db: Session = Depends(get_db),
     current_user: CurrentUser = Depends(get_current_user),
+    offset: int = 0,
+    limit: Optional[int] = None,
 ):
     """
     Return the booking history of the current authenticated user.
     """
-    bookings = booking_service.list_bookings_for_user(db, user_id=current_user.id)
+    bookings = booking_service.list_bookings_for_user(
+        db,
+        user_id=current_user.id,
+        offset=offset,
+        limit=limit,
+    )
     return bookings
 
 
@@ -164,3 +171,32 @@ def cancel_my_booking(
             detail=str(exc),
         )
     return None
+
+
+@router.get(
+    "/check-availability",
+    status_code=status.HTTP_200_OK,
+)
+def check_availability(
+    room_id: int,
+    start_time: datetime,
+    end_time: datetime,
+    db: Session = Depends(get_db),
+    _: CurrentUser = Depends(get_current_user),
+) -> dict:
+    """
+    Lightweight availability check used by other services.
+    """
+    try:
+        available = booking_service.is_room_available(
+            db,
+            room_id=room_id,
+            start_time=start_time,
+            end_time=end_time,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        )
+    return {"room_id": room_id, "available": available}

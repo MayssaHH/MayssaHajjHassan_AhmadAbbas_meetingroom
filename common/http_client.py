@@ -13,6 +13,8 @@ observable way.
 from __future__ import annotations
 
 from typing import Any, Dict, Optional
+import time
+from httpx import TimeoutException, HTTPError
 
 import httpx
 
@@ -52,6 +54,33 @@ class ServiceHTTPClient:
         """
         return httpx.Client(base_url=self.base_url, timeout=self.timeout)
 
+    def _do_with_retries(self, method: str, path: str, *, headers: Dict[str, str], **kwargs: Any) -> httpx.Response:
+        """
+        Execute a request with basic retry/backoff on network errors.
+        """
+        from common.config import get_settings  # local import to avoid cycles
+
+        settings = get_settings()
+        retries = max(settings.http_client_retries, 0)
+        attempt = 0
+        backoff = 0.25
+        last_exc: Optional[Exception] = None
+
+        while attempt <= retries:
+            try:
+                with self._build_client() as client:
+                    return client.request(method, path, headers=headers, **kwargs)
+            except (TimeoutException, HTTPError) as exc:
+                last_exc = exc
+                attempt += 1
+                if attempt > retries:
+                    break
+                time.sleep(backoff)
+                backoff *= 2
+        if last_exc:
+            raise last_exc
+        raise RuntimeError("HTTP request failed without exception")  # pragma: no cover
+
     def get(self, path: str, headers: Optional[Dict[str, str]] = None, **kwargs: Any) -> httpx.Response:
         """
         Perform a ``GET`` request against the target service.
@@ -69,8 +98,7 @@ class ServiceHTTPClient:
             Low-level HTTP response object.
         """
         merged_headers = {**self.default_headers, **(headers or {})}
-        with self._build_client() as client:
-            return client.get(path, headers=merged_headers, **kwargs)
+        return self._do_with_retries("GET", path, headers=merged_headers, **kwargs)
 
     def post(
         self,
@@ -83,5 +111,4 @@ class ServiceHTTPClient:
         Perform a ``POST`` request against the target service.
         """
         merged_headers = {**self.default_headers, **(headers or {})}
-        with self._build_client() as client:
-            return client.post(path, json=json, headers=merged_headers, **kwargs)
+        return self._do_with_retries("POST", path, headers=merged_headers, json=json, **kwargs)

@@ -9,6 +9,7 @@ operations and apply basic validation rules.
 from __future__ import annotations
 
 from typing import List, Optional
+from datetime import datetime, timedelta
 
 from sqlalchemy.orm import Session
 
@@ -40,11 +41,16 @@ def create_room(db: Session, payload: RoomCreate) -> Room:
     """
     Create a new room based on the given payload.
     """
+    name = payload.name.strip()
+    location = payload.location.strip()
+    if rooms_repository.get_room_by_name(db, name):
+        raise ValueError("Room name is already in use.")
+
     equipment_csv = _equipment_list_to_csv(payload.equipment)
     room = rooms_repository.create_room(
         db,
-        name=payload.name,
-        location=payload.location,
+        name=name,
+        location=location,
         capacity=payload.capacity,
         equipment_csv=equipment_csv,
         status=payload.status,
@@ -65,9 +71,13 @@ def update_room(db: Session, room_id: int, payload: RoomUpdate) -> Optional[Room
         return None
 
     if payload.name is not None:
-        room.name = payload.name
+        new_name = payload.name.strip()
+        other = rooms_repository.get_room_by_name(db, new_name)
+        if other and other.id != room.id:
+            raise ValueError("Room name is already in use.")
+        room.name = new_name
     if payload.location is not None:
-        room.location = payload.location
+        room.location = payload.location.strip()
     if payload.capacity is not None:
         room.capacity = payload.capacity
     if payload.status is not None:
@@ -92,6 +102,9 @@ def list_rooms(
     min_capacity: Optional[int] = None,
     location: Optional[str] = None,
     equipment: Optional[str] = None,
+    equipment_list: Optional[list[str]] = None,
+    offset: int = 0,
+    limit: Optional[int] = None,
 ) -> List[Room]:
     """
     Return rooms matching the given filters.
@@ -101,10 +114,13 @@ def list_rooms(
         min_capacity=min_capacity,
         location=location,
         equipment=equipment,
+        equipment_list=equipment_list,
+        offset=offset,
+        limit=limit,
     )
 
 
-def get_room_status(db: Session, room_id: int) -> Optional[RoomStatusResponse]:
+def get_room_status(db: Session, room_id: int, start_time: datetime | None = None, end_time: datetime | None = None) -> Optional[RoomStatusResponse]:
     """
     Return a :class:`RoomStatusResponse` for the given room id.
 
@@ -117,7 +133,15 @@ def get_room_status(db: Session, room_id: int) -> Optional[RoomStatusResponse]:
     if room is None:
         return None
 
-    is_booked = bookings_client.is_room_currently_booked(room_id)
+    if start_time is None:
+        start_time = datetime.utcnow()
+    if end_time is None:
+        end_time = start_time + timedelta(minutes=5)
+    is_booked = bookings_client.is_room_currently_booked(
+        room_id,
+        start_time=start_time,
+        end_time=end_time,
+    )
     return RoomStatusResponse(
         room_id=room.id,
         static_status=room.status,

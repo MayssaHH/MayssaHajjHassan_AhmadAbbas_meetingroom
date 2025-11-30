@@ -896,6 +896,110 @@
         "response": []
       }
     ]
+  },
+  {
+    "name": "Edge Cases",
+    "description": "Targeted scenarios to validate role enforcement and validations.",
+    "item": [
+      {
+        "name": "Users - Case-insensitive duplicate username should fail",
+        "request": {
+          "method": "POST",
+          "header": [
+            { "key": "Content-Type", "value": "application/json" }
+          ],
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"name\": \"Alice Lower\",\n  \"username\": \"edgeuser\",\n  \"email\": \"edgeuser@example.com\",\n  \"password\": \"Password123\",\n  \"role\": \"regular\"\n}"
+          },
+          "url": { "raw": "{{users_base_url}}/users/register", "host": ["{{users_base_url}}"], "path": ["users","register"] }
+        }
+      },
+      {
+        "name": "Users - Register same username different case -> 400",
+        "request": {
+          "method": "POST",
+          "header": [
+            { "key": "Content-Type", "value": "application/json" }
+          ],
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"name\": \"Alice Upper\",\n  \"username\": \"EDGEUSER\",\n  \"email\": \"edgeuser2@example.com\",\n  \"password\": \"Password123\",\n  \"role\": \"regular\"\n}"
+          },
+          "url": { "raw": "{{users_base_url}}/users/register", "host": ["{{users_base_url}}"], "path": ["users","register"] }
+        },
+        "response": [],
+        "description": "Expect HTTP 400 because username matches existing user case-insensitively."
+      },
+      {
+        "name": "Bookings - Too short duration should fail",
+        "request": {
+          "method": "POST",
+          "header": [
+            { "key": "Content-Type", "value": "application/json" },
+            { "key": "Authorization", "value": "Bearer {{access_token}}" }
+          ],
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"room_id\": 1,\n  \"start_time\": \"2025-01-01T10:00:00\",\n  \"end_time\": \"2025-01-01T10:03:00\"\n}"
+          },
+          "url": { "raw": "{{bookings_base_url}}/bookings", "host": ["{{bookings_base_url}}"], "path": ["bookings"] }
+        },
+        "description": "Expect HTTP 400 due to minimum duration validation."
+      },
+      {
+        "name": "Bookings - Check availability",
+        "request": {
+          "method": "GET",
+          "header": [
+            { "key": "Authorization", "value": "Bearer {{service_account_token}}" }
+          ],
+          "url": {
+            "raw": "{{bookings_base_url}}/bookings/check-availability?room_id={{room_id}}&start_time={{start_time}}&end_time={{end_time}}",
+            "host": ["{{bookings_base_url}}"],
+            "path": ["bookings","check-availability"],
+            "query": [
+              { "key": "room_id", "value": "{{room_id}}" },
+              { "key": "start_time", "value": "{{start_time}}" },
+              { "key": "end_time", "value": "{{end_time}}" }
+            ]
+          }
+        },
+        "description": "Expect 200 with {\"available\": true/false}."
+      },
+      {
+        "name": "Rooms - Duplicate name rejected",
+        "request": {
+          "method": "POST",
+          "header": [
+            { "key": "Content-Type", "value": "application/json" },
+            { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+          ],
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"name\": \"Room Duplicate\",\n  \"capacity\": 5,\n  \"equipment\": [],\n  \"location\": \"HQ\",\n  \"status\": \"active\"\n}"
+          },
+          "url": { "raw": "{{rooms_base_url}}/rooms", "host": ["{{rooms_base_url}}"], "path": ["rooms"] }
+        },
+        "description": "Run twice; second call should return 400 because name exists (case-insensitive)."
+      },
+      {
+        "name": "Reviews - Auditor cannot create review",
+        "request": {
+          "method": "POST",
+          "header": [
+            { "key": "Content-Type", "value": "application/json" },
+            { "key": "Authorization", "value": "Bearer {{auditor_token}}" }
+          ],
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"room_id\": 1,\n  \"rating\": 5,\n  \"comment\": \"Auditor attempt\"\n}"
+          },
+          "url": { "raw": "{{reviews_base_url}}/reviews", "host": ["{{reviews_base_url}}"], "path": ["reviews"] }
+        },
+        "description": "Expect 403 because auditors are read-only."
+      }
+    ]
   }
 
   ]

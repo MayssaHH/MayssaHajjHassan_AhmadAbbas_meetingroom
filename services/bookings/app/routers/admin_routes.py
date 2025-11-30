@@ -8,7 +8,7 @@ These routes allow privileged roles (e.g., admins, facility managers) to:
 * Force-cancel existing bookings.
 """
 
-from typing import List
+from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
@@ -21,6 +21,7 @@ from services.bookings.app.dependencies import (
     CurrentUser,
     ADMIN_OR_FM_OR_AUDITOR_ROLES,
     ADMIN_ROLES,
+    ADMIN_FM_AUDITOR_SERVICE,
 )
 from services.bookings.app.service_layer import booking_service
 
@@ -36,13 +37,15 @@ router = APIRouter()
 def list_all_bookings(
     db: Session = Depends(get_db),
     _: CurrentUser = Depends(require_roles(ADMIN_OR_FM_OR_AUDITOR_ROLES)),
+    offset: int = 0,
+    limit: Optional[int] = None,
 ):
     """
     List all bookings in the system.
 
     Typically used by admin, facility manager, or auditor roles.
     """
-    bookings = booking_service.list_all_bookings(db)
+    bookings = booking_service.list_all_bookings(db, offset=offset, limit=limit)
     return bookings
 
 
@@ -118,3 +121,49 @@ def force_cancel_booking(
             detail=str(exc),
         )
     return booking
+
+
+@router.get(
+    "/user/{user_id}",
+    response_model=List[schemas.BookingRead],
+    status_code=status.HTTP_200_OK,
+)
+def list_bookings_for_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    _: CurrentUser = Depends(require_roles(ADMIN_FM_AUDITOR_SERVICE)),
+    offset: int = 0,
+    limit: Optional[int] = None,
+):
+    """
+    List bookings for a specific user (admin/FM/auditor/service account).
+    """
+    bookings = booking_service.list_bookings_for_user(
+        db,
+        user_id=user_id,
+        offset=offset,
+        limit=limit,
+    )
+    return bookings
+
+
+@router.get(
+    "/user/{user_id}/room/{room_id}",
+    response_model=List[schemas.BookingRead],
+    status_code=status.HTTP_200_OK,
+)
+def list_bookings_for_user_and_room(
+    user_id: int,
+    room_id: int,
+    db: Session = Depends(get_db),
+    _: CurrentUser = Depends(require_roles(ADMIN_FM_AUDITOR_SERVICE)),
+):
+    """
+    List bookings for a user filtered to a specific room.
+    """
+    bookings = booking_service.list_bookings_for_user_room(
+        db,
+        user_id=user_id,
+        room_id=room_id,
+    )
+    return bookings

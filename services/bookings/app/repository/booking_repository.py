@@ -46,23 +46,32 @@ def get_booking_by_id(db: Session, booking_id: int) -> Optional[Booking]:
     return db.get(Booking, booking_id)
 
 
-def list_all_bookings(db: Session) -> List[Booking]:
+def list_all_bookings(db: Session, *, offset: int = 0, limit: Optional[int] = None) -> List[Booking]:
     """
     Return all bookings stored in the database.
     """
-    return db.query(Booking).order_by(Booking.start_time).all()
+    query = db.query(Booking).order_by(Booking.start_time)
+    if offset:
+        query = query.offset(offset)
+    if limit:
+        query = query.limit(limit)
+    return query.all()
 
 
-def list_user_bookings(db: Session, user_id: int) -> List[Booking]:
+def list_user_bookings(db: Session, user_id: int, *, offset: int = 0, limit: Optional[int] = None) -> List[Booking]:
     """
     Return all bookings belonging to a specific user.
     """
-    return (
+    query = (
         db.query(Booking)
         .filter(Booking.user_id == user_id)
         .order_by(Booking.start_time)
-        .all()
     )
+    if offset:
+        query = query.offset(offset)
+    if limit:
+        query = query.limit(limit)
+    return query.all()
 
 
 def find_conflicting_bookings(

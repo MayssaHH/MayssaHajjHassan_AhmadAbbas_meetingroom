@@ -23,6 +23,9 @@ from common.config import get_settings
 from common.rbac import (
     ROLE_ADMIN,
     ROLE_MODERATOR,
+    ROLE_AUDITOR,
+    ROLE_REGULAR,
+    ROLE_FACILITY_MANAGER,
     has_role,
 )
 
@@ -135,3 +138,35 @@ def require_admin_only(
             detail="This operation requires admin privileges.",
         )
     return user
+
+
+def require_read_access(user: CurrentUser = Depends(get_current_user)) -> CurrentUser:
+    """
+    Allow any authenticated user with read privileges (including auditor).
+    """
+    if not has_role(
+        user.role,
+        [ROLE_ADMIN, ROLE_MODERATOR, ROLE_AUDITOR, ROLE_REGULAR, ROLE_FACILITY_MANAGER],
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to view reviews.",
+        )
+    return user
+
+
+def allow_owner_or_admin_or_moderator(
+    review_user_id: int,
+    current: CurrentUser,
+) -> None:
+    """
+    Helper to assert ownership or elevated roles.
+    """
+    if current.id == review_user_id:
+        return
+    if has_role(current.role, [ROLE_ADMIN, ROLE_MODERATOR]):
+        return
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="You are not allowed to modify this review.",
+    )

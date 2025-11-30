@@ -21,9 +21,11 @@ from .. import schemas
 from ..repository import reviews_repository
 from ..clients import users_client, rooms_client, bookings_client
 from db.schema import Review
+from common.config import get_settings
 
 
 _HTML_TAG_RE = re.compile(r"<[^>]+>")
+_PROFANITY = {"spamword", "offensive"}  # simple placeholder list
 
 
 def _sanitize_comment(comment: str) -> str:
@@ -45,6 +47,11 @@ def _sanitize_comment(comment: str) -> str:
     return text
 
 
+def _contains_profanity(comment: str) -> bool:
+    lowered = comment.lower()
+    return any(token in lowered for token in _PROFANITY)
+
+
 def create_review(
     db: Session,
     *,
@@ -63,6 +70,7 @@ def create_review(
 
     Raises :class:`ValueError` for invalid data.
     """
+    settings = get_settings()
     if not users_client.ensure_user_exists(author_user_id):
         raise ValueError("User does not exist.")
 
@@ -70,17 +78,16 @@ def create_review(
         raise ValueError("Room is not active or does not exist.")
 
     # Optional business rule: user must have at least one booking
-    # for this room to leave a review.
-    if not bookings_client.user_has_booking_for_room(
+    if settings.require_booking_for_review and not bookings_client.user_has_booking_for_room(
         author_user_id, payload.room_id
     ):
-        # For Commit 6 we do not strictly enforce this rule. If you
-        # want to enforce it later, change this branch to raise.
-        pass
+        raise ValueError("A booking is required to review this room.")
 
     comment = _sanitize_comment(payload.comment)
     if not comment:
         raise ValueError("Comment cannot be empty after sanitization.")
+    if _contains_profanity(comment):
+        raise ValueError("Comment contains inappropriate language.")
 
     review = reviews_repository.create_review(
         db,

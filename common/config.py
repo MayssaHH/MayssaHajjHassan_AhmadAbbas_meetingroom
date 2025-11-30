@@ -12,6 +12,7 @@ Settings are loaded from process environment variables and an optional
 
 from __future__ import annotations
 from functools import lru_cache
+from typing import Optional
 from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
@@ -44,6 +45,9 @@ class Settings(BaseSettings):
     database_url: str = "postgresql://postgres:postgres@db:5432/smart_meeting_room"
     jwt_secret_key: str = "CHANGE_ME_IN_PRODUCTION"
     jwt_algorithm: str = "HS256"
+    jwt_issuer: Optional[str] = None
+    jwt_audience: Optional[str] = None
+    jwt_leeway_seconds: int = 30
     access_token_expire_minutes: int = 60
 
     users_service_url: str = "http://users-service:8001"
@@ -53,6 +57,12 @@ class Settings(BaseSettings):
 
     service_account_username: str = "service_account"
     service_account_password: str = "CHANGE_ME_IN_PRODUCTION"
+    service_account_enabled: bool = True
+
+    http_client_timeout: float = 5.0
+    http_client_retries: int = 2
+    client_stub_fallback: bool = True  # allow permissive fallback when downstream unavailable (tests/dev)
+    require_booking_for_review: bool = False
 
     class Config:
         """
