@@ -17,3 +17,12 @@ page and a placeholder for the Users service.
    rooms_service
    bookings_service
    reviews_service
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Services
+
+   users_service
+   rooms_service
+   bookings_service
+   reviews_service

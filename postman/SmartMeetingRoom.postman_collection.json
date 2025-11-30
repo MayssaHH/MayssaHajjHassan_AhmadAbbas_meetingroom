@@ -17,6 +17,10 @@
   {
     "key": "bookings_base_url",
     "value": "http://localhost:8003"
+  },
+  {
+    "key": "reviews_base_url",
+    "value": "http://localhost:8004"
   }
   ],
   "item": [
@@ -621,6 +625,273 @@
             ]
           },
           "description": "Admin-only operation that force-cancels a booking even if it conflicts with others."
+        },
+        "response": []
+      }
+    ]
+  },
+  {
+    "name": "Reviews",
+    "item": [
+      {
+        "name": "Create review",
+        "request": {
+          "method": "POST",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Authorization",
+              "value": "Bearer {{access_token}}",
+              "description": "JWT for a regular authenticated user."
+            }
+          ],
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"room_id\": 1,\n  \"rating\": 4,\n  \"comment\": \"The room was clean and quiet. The projector worked well.\"\n}"
+          },
+          "url": {
+            "raw": "{{reviews_base_url}}/reviews",
+            "host": [
+              "{{reviews_base_url}}"
+            ],
+            "path": [
+              "reviews"
+            ]
+          },
+          "description": "Create a new review for a room. The user id is taken from the authenticated JWT."
+        },
+        "response": []
+      },
+      {
+        "name": "Get reviews for room",
+        "request": {
+          "method": "GET",
+          "header": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{access_token}}",
+              "description": "JWT for any authenticated user."
+            }
+          ],
+          "url": {
+            "raw": "{{reviews_base_url}}/reviews/room/{{room_id}}",
+            "host": [
+              "{{reviews_base_url}}"
+            ],
+            "path": [
+              "reviews",
+              "room",
+              "{{room_id}}"
+            ]
+          },
+          "description": "List all non-hidden reviews for a given room."
+        },
+        "response": []
+      },
+      {
+        "name": "List my reviews",
+        "request": {
+          "method": "GET",
+          "header": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{access_token}}",
+              "description": "JWT for the current user."
+            }
+          ],
+          "url": {
+            "raw": "{{reviews_base_url}}/reviews/me",
+            "host": [
+              "{{reviews_base_url}}"
+            ],
+            "path": [
+              "reviews",
+              "me"
+            ]
+          },
+          "description": "Return all reviews created by the currently authenticated user."
+        },
+        "response": []
+      },
+      {
+        "name": "Update my review",
+        "request": {
+          "method": "PUT",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Authorization",
+              "value": "Bearer {{access_token}}",
+              "description": "JWT for the review owner."
+            }
+          ],
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"rating\": 5,\n  \"comment\": \"Updated: everything worked perfectly during the meeting.\"\n}"
+          },
+          "url": {
+            "raw": "{{reviews_base_url}}/reviews/{{review_id}}",
+            "host": [
+              "{{reviews_base_url}}"
+            ],
+            "path": [
+              "reviews",
+              "{{review_id}}"
+            ]
+          },
+          "description": "Update the rating and/or comment of an existing review owned by the current user."
+        },
+        "response": []
+      },
+      {
+        "name": "Delete my review",
+        "request": {
+          "method": "DELETE",
+          "header": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{access_token}}",
+              "description": "JWT for the review owner."
+            }
+          ],
+          "url": {
+            "raw": "{{reviews_base_url}}/reviews/{{review_id}}",
+            "host": [
+              "{{reviews_base_url}}"
+            ],
+            "path": [
+              "reviews",
+              "{{review_id}}"
+            ]
+          },
+          "description": "Soft-delete one of the current user's reviews. Expected status: 204 No Content."
+        },
+        "response": []
+      },
+      {
+        "name": "Admin – List all reviews",
+        "request": {
+          "method": "GET",
+          "header": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{admin_token}}",
+              "description": "JWT for an admin or moderator."
+            }
+          ],
+          "url": {
+            "raw": "{{reviews_base_url}}/admin/reviews",
+            "host": [
+              "{{reviews_base_url}}"
+            ],
+            "path": [
+              "admin",
+              "reviews"
+            ]
+          },
+          "description": "List all reviews in the system for moderation/auditing purposes."
+        },
+        "response": []
+      },
+      {
+        "name": "Admin – List flagged reviews",
+        "request": {
+          "method": "GET",
+          "header": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{admin_token}}",
+              "description": "JWT for an admin or moderator."
+            }
+          ],
+          "url": {
+            "raw": "{{reviews_base_url}}/admin/reviews/flagged",
+            "host": [
+              "{{reviews_base_url}}"
+            ],
+            "path": [
+              "admin",
+              "reviews",
+              "flagged"
+            ]
+          },
+          "description": "List reviews that have been flagged as potentially inappropriate."
+        },
+        "response": []
+      },
+      {
+        "name": "Admin – Flag/unflag review",
+        "request": {
+          "method": "PATCH",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Authorization",
+              "value": "Bearer {{admin_token}}",
+              "description": "JWT for an admin or moderator."
+            }
+          ],
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"flagged\": true\n}"
+          },
+          "url": {
+            "raw": "{{reviews_base_url}}/admin/reviews/{{review_id}}/flag",
+            "host": [
+              "{{reviews_base_url}}"
+            ],
+            "path": [
+              "admin",
+              "reviews",
+              "{{review_id}}",
+              "flag"
+            ]
+          },
+          "description": "Flag or unflag a review. Used by moderators/admins to mark reviews that need attention."
+        },
+        "response": []
+      },
+      {
+        "name": "Admin – Hide/restore review",
+        "request": {
+          "method": "PATCH",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Authorization",
+              "value": "Bearer {{admin_token}}",
+              "description": "JWT for an admin or moderator."
+            }
+          ],
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"hidden\": true\n}"
+          },
+          "url": {
+            "raw": "{{reviews_base_url}}/admin/reviews/{{review_id}}/visibility",
+            "host": [
+              "{{reviews_base_url}}"
+            ],
+            "path": [
+              "admin",
+              "reviews",
+              "{{review_id}}",
+              "visibility"
+            ]
+          },
+          "description": "Hide or restore a review from public listings."
         },
         "response": []
       }
