@@ -176,3 +176,20 @@ Typical error codes include:
 * ``ROOM_NOT_FOUND`` / ``USER_NOT_FOUND`` / ``ROOM_INACTIVE``
 * ``BOOKING_CONFLICT``
 * ``NOT_OWNER`` (for non-owner update/cancel)
+
+Notifications (Part II)
+---------------------------------
+
+When a booking is created or cancelled, the Bookings service triggers an
+email notification through a third-party provider (SendGrid). The service
+uses internal HTTP clients to fetch the user's email address from the Users
+service and the room name from the Rooms service, using a service-account
+token.
+
+Notification sending is implemented in ``common.notifications`` and is
+controlled by configuration options (``NOTIFICATIONS_ENABLED``,
+``SENDGRID_API_KEY``, ``SENDGRID_FROM_EMAIL``). Failures in the external
+provider are logged but do not affect the success of the booking operation.
+If enabled, these failures would surface as a ``NOTIFICATION_FAILED`` error
+with a standardized ``{error_code, message, details}`` response.
+
