@@ -6,7 +6,7 @@ This module exposes the FastAPI application instance for the Users service.
 
 import logging
 
-from fastapi import FastAPI, HTTPException, Request, status
+from fastapi import APIRouter, FastAPI, HTTPException, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
@@ -111,6 +111,16 @@ async def generic_exception_handler(request: Request, exc: Exception) -> JSONRes
     )
 
 
+# API v1 router
+api_v1 = APIRouter(prefix="/api/v1")
+
+api_v1.include_router(auth_routes.router, prefix="/users", tags=["auth"])
+api_v1.include_router(users_routes.router, prefix="/users", tags=["users"])
+api_v1.include_router(admin_routes.router, prefix="/admin/users", tags=["admin-users"])
+
+app.include_router(api_v1)
+
+
 @app.get("/health", tags=["health"])
 def health_check() -> dict:
     """
@@ -122,8 +132,3 @@ def health_check() -> dict:
         A small JSON payload indicating that the Users service is alive.
     """
     return {"status": "ok", "service": "users"}
-
-
-app.include_router(auth_routes.router, prefix="/users", tags=["auth"])
-app.include_router(users_routes.router, prefix="/users", tags=["users"])
-app.include_router(admin_routes.router, prefix="/users", tags=["admin-users"])

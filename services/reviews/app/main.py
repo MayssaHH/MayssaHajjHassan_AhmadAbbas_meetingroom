@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import logging
 
-from fastapi import FastAPI, HTTPException, Request, status
+from fastapi import APIRouter, FastAPI, HTTPException, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
@@ -110,10 +110,15 @@ async def generic_exception_handler(request: Request, exc: Exception) -> JSONRes
     )
 
 
-app.include_router(reviews_routes.router)
-app.include_router(moderation_routes.router)
-app.include_router(admin_routes.router, prefix="/admin", tags=["admin-reviews"])
-app.include_router(analytics_routes.router)
+# API v1 router
+api_v1 = APIRouter(prefix="/api/v1")
+
+api_v1.include_router(reviews_routes.router, prefix="/reviews", tags=["reviews"])
+api_v1.include_router(moderation_routes.router, prefix="/admin/reviews", tags=["reviews-moderation"])
+api_v1.include_router(admin_routes.router, prefix="/admin/reviews", tags=["admin-reviews"])
+api_v1.include_router(analytics_routes.router)
+
+app.include_router(api_v1)
 
 
 @app.get("/health", tags=["health"])
