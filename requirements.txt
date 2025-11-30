@@ -16,3 +16,7 @@ pydantic[email]
 python-jose[cryptography]
 passlib[bcrypt]
 bcrypt<5.0.0
+memray; platform_system != "Windows"
+pytest-memray; platform_system != "Windows"
+pytest-profiling
+coverage

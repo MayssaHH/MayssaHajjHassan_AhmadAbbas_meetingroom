@@ -21,6 +21,8 @@ def ensure_room_is_active(room_id: int) -> bool:
     Falls back to ``True`` when stub fallback is enabled.
     """
     settings = get_settings()
+    if settings.client_stub_fallback:
+        return True
     token = get_service_account_token()
     client = ServiceHTTPClient(
         settings.rooms_service_url,

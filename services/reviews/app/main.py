@@ -45,14 +45,15 @@ async def validation_error_handler(
     """
     Handle request validation errors.
 
-    Returns 400 with VALIDATION_ERROR code and validation details.
+    Returns 422 with VALIDATION_ERROR code and validation details.
     """
     return JSONResponse(
-        status_code=status.HTTP_400_BAD_REQUEST,
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         content={
             "error_code": "VALIDATION_ERROR",
             "message": "Request validation failed.",
             "details": {"errors": exc.errors()},
+            "detail": exc.errors(),
         },
     )
 
@@ -112,13 +113,19 @@ async def generic_exception_handler(request: Request, exc: Exception) -> JSONRes
 
 # API v1 router
 api_v1 = APIRouter(prefix="/api/v1")
-
-api_v1.include_router(reviews_routes.router, prefix="/reviews", tags=["reviews"])
-api_v1.include_router(moderation_routes.router, prefix="/admin/reviews", tags=["reviews-moderation"])
-api_v1.include_router(admin_routes.router, prefix="/admin/reviews", tags=["admin-reviews"])
+api_v1.include_router(reviews_routes.router, tags=["reviews"])
+api_v1.include_router(moderation_routes.router, prefix="/admin", tags=["reviews-moderation"])
+# Also expose moderation under /api/v1/reviews/* (non-admin prefix) for moderator/admin roles
+api_v1.include_router(moderation_routes.router, tags=["reviews-moderation-compat"])
+api_v1.include_router(admin_routes.router, prefix="/admin", tags=["admin-reviews"])
 api_v1.include_router(analytics_routes.router)
-
 app.include_router(api_v1)
+
+# Backward-compatible mount without version prefix
+app.include_router(reviews_routes.router)
+app.include_router(moderation_routes.router, prefix="/admin", tags=["reviews-moderation-compat"])
+app.include_router(admin_routes.router, prefix="/admin", tags=["admin-reviews-compat"])
+app.include_router(analytics_routes.router)
 
 
 @app.get("/health", tags=["health"])

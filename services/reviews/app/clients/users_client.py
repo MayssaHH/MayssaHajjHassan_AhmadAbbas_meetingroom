@@ -21,6 +21,8 @@ def ensure_user_exists(user_id: int) -> bool:
     Falls back to ``True`` when stub fallback is enabled.
     """
     settings = get_settings()
+    if settings.client_stub_fallback:
+        return True
     token = get_service_account_token()
     client = ServiceHTTPClient(
         settings.users_service_url,

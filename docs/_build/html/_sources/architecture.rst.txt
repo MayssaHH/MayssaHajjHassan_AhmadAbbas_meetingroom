@@ -1,0 +1,83 @@
+System Architecture
+===================
+
+.. note::
+
+   This page is a placeholder created in Commit 2. It will be expanded
+   in later commits with diagrams and detailed explanations.
+
+Overview
+--------
+
+The Smart Meeting Room backend is designed as a small microservice
+ecosystem built around four main services:
+
+* **Users service** – manages accounts, authentication, and roles.
+* **Rooms service** – manages room inventory and static room data.
+* **Bookings service** – manages time-based reservations of rooms.
+* **Reviews service** – manages user feedback and moderation.
+
+All services share a common relational database schema (implemented in
+``db.schema``) and communicate with each other over HTTP using
+well-defined APIs and a dedicated ``service_account`` user.
+
+Users service
+-------------
+
+The Users service is responsible for managing user accounts, authentication, and roles.
+It provides endpoints for user registration, login, profile management, and role assignment.
+It is called by clients directly and relies on shared authentication and RBAC logic to
+enforce permissions for regular users, moderators, and admins.
+
+Rooms Service
+-------------
+
+The Rooms service is responsible for storing and exposing meeting room metadata,
+including capacity, equipment, and location. It provides filtered search for
+rooms and a status endpoint that can be combined with booking information from
+the Bookings service to determine availability.
+
+Bookings service
+----------------
+
+The Bookings service is responsible for managing time-based reservations of rooms.
+It owns the lifecycle of a booking:
+creation
+update (change time window or room)
+cancellation by the booking owner
+force-cancellation / conflict resolution by admins
+
+Reviews service
+---------------
+
+The Reviews microservice is responsible for user feedback about rooms.
+It stores ratings and comments, validates and sanitizes user input, and exposes
+moderation endpoints for flagging, hiding, and restoring reviews. It is called
+by clients directly and relies on shared authentication and RBAC logic to
+enforce permissions for regular users, moderators, and admins.
+
+API Versioning
+--------------
+
+All business endpoints are versioned under the ``/api/v1/`` prefix:
+
+* **Users service**: ``/api/v1/users/*``
+* **Rooms service**: ``/api/v1/rooms/*``
+* **Bookings service**: ``/api/v1/bookings/*``, ``/api/v1/admin/bookings/*``
+* **Reviews service**: ``/api/v1/reviews/*``, ``/api/v1/admin/reviews/*``
+
+Health check endpoints remain unversioned and are accessible at the root level:
+
+* ``GET /health`` - Returns service health status
+
+Future breaking changes will be introduced under ``/api/v2/``, allowing clients
+to migrate gradually while maintaining backward compatibility with v1 endpoints.
+
+Deployment View
+---------------
+
+The system is deployed as five Docker containers (database + four services).
+For details on ports, container names, and how to run the stack, see
+:doc:`deployment_docker`.
+
+

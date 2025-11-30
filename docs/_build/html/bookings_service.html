@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Bookings Service &#8212; Smart Meeting Room Backend Documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="_static/basic.css?v=686e5160" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=27fed22d" />
+    <script src="_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Reviews Service" href="reviews_service.html" />
+    <link rel="prev" title="Rooms Service" href="rooms_service.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="bookings-service">
+<h1>Bookings Service<a class="headerlink" href="#bookings-service" title="Link to this heading">¶</a></h1>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading">¶</a></h2>
+<p>The <strong>Bookings</strong> service is responsible for managing reservations of
+meeting rooms. It owns the lifecycle of a booking:</p>
+<ul class="simple">
+<li><p>creation</p></li>
+<li><p>update (change time window or room)</p></li>
+<li><p>cancellation by the booking owner</p></li>
+<li><p>force-cancellation / conflict resolution by admins</p></li>
+</ul>
+<p>The service never trusts raw IDs coming from clients. Instead, it:</p>
+<ul class="simple">
+<li><p>validates the user via the Users service (service-to-service call),</p></li>
+<li><p>validates the room via the Rooms service,</p></li>
+<li><p>enforces a <strong>no–overlapping-confirmed-bookings</strong> rule per room and
+time interval.</p></li>
+</ul>
+</section>
+<section id="roles-and-responsibilities">
+<h2>Roles and responsibilities<a class="headerlink" href="#roles-and-responsibilities" title="Link to this heading">¶</a></h2>
+<section id="regular-user">
+<h3>Regular user<a class="headerlink" href="#regular-user" title="Link to this heading">¶</a></h3>
+<p>A regular authenticated user can:</p>
+<ul class="simple">
+<li><p>create a booking for an available room.</p></li>
+<li><p>view only <strong>his/her own</strong> bookings.</p></li>
+<li><p>update his/her own booking (e.g., change time window).</p></li>
+<li><p>cancel his/her own booking.</p></li>
+</ul>
+</section>
+<section id="facility-manager-auditor">
+<h3>Facility Manager / Auditor<a class="headerlink" href="#facility-manager-auditor" title="Link to this heading">¶</a></h3>
+<p>Facility managers and auditors can:</p>
+<ul class="simple">
+<li><p>list <strong>all</strong> bookings in the system for monitoring and planning.</p></li>
+<li><p>inspect bookings per room or per user (read-only).</p></li>
+</ul>
+</section>
+<section id="administrator">
+<h3>Administrator<a class="headerlink" href="#administrator" title="Link to this heading">¶</a></h3>
+<p>Administrators can do everything above, plus:</p>
+<ul class="simple">
+<li><p>force-cancel any booking (even if it conflicts with another one).</p></li>
+<li><p>optionally perform conflict-resolution operations such as
+re-scheduling a booking.</p></li>
+</ul>
+</section>
+</section>
+<section id="endpoints-summary">
+<h2>Endpoints summary<a class="headerlink" href="#endpoints-summary" title="Link to this heading">¶</a></h2>
+<section id="public-endpoints-regular-user">
+<h3>Public endpoints (regular user)<a class="headerlink" href="#public-endpoints-regular-user" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">GET</span> <span class="pre">/bookings/my</span></code>
+Return the list of bookings that belong to the current user.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">POST</span> <span class="pre">/bookings</span></code>
+Create a new booking for a specific room and time window.
+Request body includes:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">room_id</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">start_time</span></code> (ISO-8601)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">end_time</span></code> (ISO-8601)</p></li>
+<li><p>optional <code class="docutils literal notranslate"><span class="pre">title</span></code> / <code class="docutils literal notranslate"><span class="pre">notes</span></code></p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PUT</span> <span class="pre">/bookings/{booking_id}</span></code>
+Update a booking owned by the current user (time window, room, or
+metadata). Fails with <code class="docutils literal notranslate"><span class="pre">403</span></code> if the booking does not belong to the
+caller.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">POST</span> <span class="pre">/bookings/{booking_id}/cancel</span></code>
+Cancel a booking owned by the current user. Marks the booking as
+<code class="docutils literal notranslate"><span class="pre">cancelled</span></code> but keeps it in history.</p></li>
+</ul>
+</section>
+<section id="administrative-endpoints">
+<h3>Administrative endpoints<a class="headerlink" href="#administrative-endpoints" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">GET</span> <span class="pre">/bookings</span></code>
+List all bookings in the system. Accessible to admins, facility
+managers, and auditors.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">POST</span> <span class="pre">/bookings/{booking_id}/force-cancel</span></code>
+Admin-only endpoint. Force-cancels an existing booking regardless of
+its current state. This is used to resolve conflicts or free rooms in
+exceptional situations.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">GET</span> <span class="pre">/bookings/check-availability</span></code>
+Check if a given room is free for a specific time window. Returns a
+flag and optionally a list of conflicting bookings.</p></li>
+</ul>
+</section>
+</section>
+<section id="booking-lifecycle-and-status">
+<h2>Booking lifecycle and status<a class="headerlink" href="#booking-lifecycle-and-status" title="Link to this heading">¶</a></h2>
+<p>Each booking has a <strong>status</strong> field:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">pending</span></code> – (optional) used if you later implement multi-step
+approval flows.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">confirmed</span></code> – normal active booking state.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">cancelled</span></code> – booking has been cancelled by its owner or by an
+administrator.</p></li>
+</ul>
+<p>For Commit 5, user-created bookings can directly enter the
+<code class="docutils literal notranslate"><span class="pre">confirmed</span></code> state as long as there is no conflict. Admins may
+force-cancel a <code class="docutils literal notranslate"><span class="pre">confirmed</span></code> booking at any time.</p>
+</section>
+<section id="conflict-detection">
+<h2>Conflict detection<a class="headerlink" href="#conflict-detection" title="Link to this heading">¶</a></h2>
+<p>For a given room, the service must prevent two <strong>confirmed</strong> bookings
+from overlapping in time.</p>
+<p>A simplified conflict rule:</p>
+<p><em>Bookings A and B conflict if:</em></p>
+<ul class="simple">
+<li><p>they refer to the same <code class="docutils literal notranslate"><span class="pre">room_id</span></code>, and</p></li>
+<li><p>their time intervals overlap
+(<code class="docutils literal notranslate"><span class="pre">A.start_time</span> <span class="pre">&lt;</span> <span class="pre">B.end_time</span></code> <strong>and</strong>
+<code class="docutils literal notranslate"><span class="pre">B.start_time</span> <span class="pre">&lt;</span> <span class="pre">A.end_time</span></code>).</p></li>
+</ul>
+<p>On create / update:</p>
+<ul class="simple">
+<li><p>if a conflicting <strong>confirmed</strong> booking exists and the caller is not
+using an admin override, the service returns HTTP <code class="docutils literal notranslate"><span class="pre">409</span> <span class="pre">Conflict</span></code>.</p></li>
+<li><p>if the caller is an admin using a force operation, the service is
+allowed to cancel or modify the conflicting booking.</p></li>
+</ul>
+</section>
+<section id="inter-service-communication">
+<h2>Inter-service communication<a class="headerlink" href="#inter-service-communication" title="Link to this heading">¶</a></h2>
+<p>The Bookings service talks to other services via HTTP calls using a
+dedicated <strong>service account</strong>:</p>
+<ul class="simple">
+<li><p><strong>Users service</strong></p>
+<ul>
+<li><p>Validate that the <code class="docutils literal notranslate"><span class="pre">user_id</span></code> from the JWT still exists.</p></li>
+<li><p>Inspect the user role to decide whether admin-only endpoints are
+allowed.</p></li>
+</ul>
+</li>
+<li><p><strong>Rooms service</strong></p>
+<ul>
+<li><p>Ensure that the <code class="docutils literal notranslate"><span class="pre">room_id</span></code> exists.</p></li>
+<li><p>Ensure that the room is in an <code class="docutils literal notranslate"><span class="pre">active</span></code> state before confirming a
+booking.</p></li>
+</ul>
+</li>
+</ul>
+<p>These calls are implemented through thin client modules
+(e.g. <code class="docutils literal notranslate"><span class="pre">users_client</span></code> and <code class="docutils literal notranslate"><span class="pre">rooms_client</span></code>) which hide the HTTP details
+and use a shared <code class="docutils literal notranslate"><span class="pre">ServiceHTTPClient</span></code> abstraction from <code class="docutils literal notranslate"><span class="pre">common</span></code>.</p>
+</section>
+<section id="documentation-notes">
+<h2>Documentation notes<a class="headerlink" href="#documentation-notes" title="Link to this heading">¶</a></h2>
+<p>The actual Python implementation of the Bookings service (routers,
+schemas, business logic, repository) will include detailed docstrings
+describing:</p>
+<ul class="simple">
+<li><p>how a booking is created and validated,</p></li>
+<li><p>how conflicts are detected,</p></li>
+<li><p>when and how admins can override conflicts.</p></li>
+</ul>
+<p>This <code class="docutils literal notranslate"><span class="pre">bookings_service.rst</span></code> file summarises the behaviour at a high
+level and will be complemented by Sphinx autodoc for the corresponding
+modules.</p>
+</section>
+<section id="error-handling-and-validation">
+<h2>Error Handling and Validation<a class="headerlink" href="#error-handling-and-validation" title="Link to this heading">¶</a></h2>
+<p>This service uses the shared error schema (<a class="reference internal" href="error_validation.html"><span class="doc">Error Handling and Validation</span></a>).
+Typical error codes include:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">INVALID_TIME_RANGE</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ROOM_NOT_FOUND</span></code> / <code class="docutils literal notranslate"><span class="pre">USER_NOT_FOUND</span></code> / <code class="docutils literal notranslate"><span class="pre">ROOM_INACTIVE</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">BOOKING_CONFLICT</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">NOT_OWNER</span></code> (for non-owner update/cancel)</p></li>
+</ul>
+</section>
+<section id="notifications-part-ii">
+<h2>Notifications (Part II)<a class="headerlink" href="#notifications-part-ii" title="Link to this heading">¶</a></h2>
+<p>When a booking is created or cancelled, the Bookings service triggers an
+email notification through a third-party provider (SendGrid). The service
+uses internal HTTP clients to fetch the user’s email address from the Users
+service and the room name from the Rooms service, using a service-account
+token.</p>
+<p>Notification sending is implemented in <code class="docutils literal notranslate"><span class="pre">common.notifications</span></code> and is
+controlled by configuration options (<code class="docutils literal notranslate"><span class="pre">NOTIFICATIONS_ENABLED</span></code>,
+<code class="docutils literal notranslate"><span class="pre">SENDGRID_API_KEY</span></code>, <code class="docutils literal notranslate"><span class="pre">SENDGRID_FROM_EMAIL</span></code>). Failures in the external
+provider are logged but do not affect the success of the booking operation.
+If enabled, these failures would surface as a <code class="docutils literal notranslate"><span class="pre">NOTIFICATION_FAILED</span></code> error
+with a standardized <code class="docutils literal notranslate"><span class="pre">{error_code,</span> <span class="pre">message,</span> <span class="pre">details}</span></code> response.</p>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">Smart Meeting Room Backend</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="architecture.html">System Architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="deployment_docker.html">Deployment &amp; Docker Setup</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Services</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="users_service.html">Users Service</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rooms_service.html">Rooms Service</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Bookings Service</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#roles-and-responsibilities">Roles and responsibilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#endpoints-summary">Endpoints summary</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#booking-lifecycle-and-status">Booking lifecycle and status</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#conflict-detection">Conflict detection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#inter-service-communication">Inter-service communication</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#documentation-notes">Documentation notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#error-handling-and-validation">Error Handling and Validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#notifications-part-ii">Notifications (Part II)</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="reviews_service.html">Reviews Service</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="rooms_service.html" title="previous chapter">Rooms Service</a></li>
+      <li>Next: <a href="reviews_service.html" title="next chapter">Reviews Service</a></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2025, Mayssa Hajj Hassan & Ahmad Abbas.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.1.3</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="_sources/bookings_service.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

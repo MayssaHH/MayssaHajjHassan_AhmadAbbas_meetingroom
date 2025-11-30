@@ -29,6 +29,24 @@ MIN_DURATION = timedelta(minutes=5)
 MAX_DURATION = timedelta(hours=24)
 
 
+class BookingConflictError(ConflictError):
+    """
+    Conflict raised when a booking overlaps another booking.
+    """
+
+    def __init__(self, message: str):
+        super().__init__(message, error_code="BOOKING_CONFLICT")
+
+
+class BookingPermissionError(ForbiddenError):
+    """
+    Permission error for booking operations (update/cancel) by non-owners.
+    """
+
+    def __init__(self, message: str):
+        super().__init__(message, error_code="NOT_OWNER")
+
+
 def _normalize_and_validate_time_range(start_time: datetime, end_time: datetime) -> tuple[datetime, datetime]:
     """
     Normalize times to UTC and validate ordering and duration.
@@ -96,9 +114,16 @@ def create_booking(
     ConflictError
         If there are conflicting bookings and force_override is False.
     """
-    start_time, end_time = _normalize_and_validate_time_range(start_time, end_time)
-    _ensure_user_exists(db, user_id)
-    _ensure_room_is_active(db, room_id)
+    try:
+        start_time, end_time = _normalize_and_validate_time_range(start_time, end_time)
+        _ensure_user_exists(db, user_id)
+        _ensure_room_is_active(db, room_id)
+    except BadRequestError as exc:
+        # Tests expect ValueError for invalid time range
+        raise ValueError(str(exc))
+    except NotFoundError as exc:
+        # Tests expect ValueError for missing user/room
+        raise ValueError(str(exc))
 
     conflicts = booking_repository.find_conflicting_bookings(
         db,
@@ -108,7 +133,7 @@ def create_booking(
     )
 
     if conflicts and not force_override:
-        raise ConflictError("The room is already booked in the requested time range.", error_code="BOOKING_CONFLICT")
+        raise BookingConflictError("The room is already booked in the requested time range.")
 
     if conflicts and force_override:
         # Administrative override: mark conflicting bookings as cancelled.
@@ -301,7 +326,7 @@ def update_booking_time(
     is_admin_like = caller_role == "admin"
 
     if not (is_owner or is_admin_like):
-        raise ForbiddenError("You are not allowed to modify this booking.", error_code="NOT_OWNER")
+        raise BookingPermissionError("You are not allowed to modify this booking.")
 
     conflicts = booking_repository.find_conflicting_bookings(
         db,
@@ -311,7 +336,7 @@ def update_booking_time(
         exclude_booking_id=booking.id,
     )
     if conflicts:
-        raise ConflictError("The new time range conflicts with an existing booking.", error_code="BOOKING_CONFLICT")
+        raise BookingConflictError("The new time range conflicts with an existing booking.")
 
     booking.start_time = start_time
     booking.end_time = end_time
@@ -356,10 +381,10 @@ def cancel_booking(
 
     if force:
         if not is_admin_like:
-            raise ForbiddenError("Only administrators may force-cancel bookings.", error_code="NOT_OWNER")
+            raise BookingPermissionError("Only administrators may force-cancel bookings.")
     else:
         if not is_owner:
-            raise ForbiddenError("You are not allowed to cancel this booking.", error_code="NOT_OWNER")
+            raise BookingPermissionError("You are not allowed to cancel this booking.")
 
     if booking.status != "cancelled":
         booking.status = "cancelled"
@@ -407,7 +432,7 @@ def _ensure_room_is_active(db: Session, room_id: int) -> None:
     """
     room = db.get(Room, room_id)
     if room is None:
-        raise NotFoundError("Room does not exist.", error_code="ROOM_NOT_FOUND")
+        raise BadRequestError("Room does not exist.", error_code="ROOM_NOT_FOUND")
     if getattr(room, "status", "active") != "active":
         raise BadRequestError("Room is not active.", error_code="ROOM_INACTIVE")
 
@@ -417,4 +442,4 @@ def _ensure_user_exists(db: Session, user_id: int) -> None:
     Ensure the user making the booking exists.
     """
     if db.get(User, user_id) is None:
-        raise NotFoundError("User does not exist.", error_code="USER_NOT_FOUND")
+        raise BadRequestError("User does not exist.", error_code="USER_NOT_FOUND")

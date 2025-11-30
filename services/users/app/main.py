@@ -49,11 +49,12 @@ async def validation_error_handler(
     Returns 400 with VALIDATION_ERROR code and validation details.
     """
     return JSONResponse(
-        status_code=status.HTTP_400_BAD_REQUEST,
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         content={
             "error_code": "VALIDATION_ERROR",
             "message": "Request validation failed.",
             "details": {"errors": exc.errors()},
+            "detail": exc.errors(),
         },
     )
 
@@ -84,6 +85,7 @@ async def http_exception_handler(request: Request, exc: HTTPException) -> JSONRe
             "error_code": error_code,
             "message": message,
             "details": {},
+            "detail": message if isinstance(exc.detail, str) else exc.detail,
         },
     )
 
@@ -119,6 +121,9 @@ api_v1.include_router(users_routes.router, prefix="/users", tags=["users"])
 api_v1.include_router(admin_routes.router, prefix="/admin/users", tags=["admin-users"])
 
 app.include_router(api_v1)
+# Backward-compatible aliases without /api/v1 for tools/tests that hit /users/*
+app.include_router(auth_routes.router, prefix="/users", tags=["auth-compat"])
+app.include_router(users_routes.router, prefix="/users", tags=["users-compat"])
 
 
 @app.get("/health", tags=["health"])
