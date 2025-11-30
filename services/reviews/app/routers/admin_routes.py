@@ -54,6 +54,24 @@ def list_all_reviews(
     return reviews
 
 
+@router.get(
+    "/reviews/flagged",
+    response_model=List[schemas.ReviewRead],
+)
+def list_flagged_reviews_admin(
+    db: Session = Depends(get_db),
+    _: CurrentUser = Depends(require_moderator_or_admin),
+):
+    """
+    List all reviews that are currently flagged (reports).
+
+    MODERATOR + ADMIN: View all flagged reviews for moderation review.
+    This is an admin endpoint that mirrors /reviews/flagged for convenience.
+    """
+    reviews = reviews_service.list_flagged_reviews(db)
+    return reviews
+
+
 @router.delete(
     "/reviews/{review_id}",
     status_code=status.HTTP_204_NO_CONTENT,
