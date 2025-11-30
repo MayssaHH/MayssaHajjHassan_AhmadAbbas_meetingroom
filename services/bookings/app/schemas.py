@@ -77,3 +77,16 @@ class BookingRead(BaseModel):
         """
 
         from_attributes = True
+
+
+class BookingsSummaryResponse(BaseModel):
+    total_bookings: int
+    confirmed_bookings: int
+    cancelled_bookings: int
+
+
+class BookingsByRoomItem(BaseModel):
+    room_id: int
+    total: int
+    confirmed: int
+    cancelled: int

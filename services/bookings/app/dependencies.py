@@ -10,7 +10,7 @@ This module wires:
 
 from typing import Callable, List
 
-from fastapi import Depends
+from fastapi import Depends, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -24,6 +24,7 @@ from common.rbac import (
     ROLE_SERVICE_ACCOUNT,
 )
 from common.exceptions import UnauthorizedError, ForbiddenError
+from common.rate_limiter import check_rate_limit
 from db.init_db import get_db as _get_db
 
 
@@ -111,3 +112,9 @@ def require_roles(allowed_roles: List[str]) -> Callable[[CurrentUser], CurrentUs
 ADMIN_ROLES = [ROLE_ADMIN]
 ADMIN_OR_FM_OR_AUDITOR_ROLES = [ROLE_ADMIN, ROLE_FACILITY_MANAGER, ROLE_AUDITOR]
 ADMIN_FM_AUDITOR_SERVICE = [ROLE_ADMIN, ROLE_FACILITY_MANAGER, ROLE_AUDITOR, ROLE_SERVICE_ACCOUNT]
+
+
+def rate_limit_by_user(endpoint: str):
+    def _dep(current_user: CurrentUser = Depends(get_current_user)):
+        check_rate_limit(f"{endpoint}:{current_user.id}")
+    return _dep

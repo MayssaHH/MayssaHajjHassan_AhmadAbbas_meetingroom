@@ -8,7 +8,7 @@ This module encapsulates all direct database interactions involving the
 from datetime import datetime
 from typing import List, Optional
 
-from sqlalchemy import and_, or_
+from sqlalchemy import and_, or_, func, case
 from sqlalchemy.orm import Session
 
 from db.schema import Booking
@@ -119,3 +119,48 @@ def delete_booking(db: Session, booking: Booking) -> None:
     """
     db.delete(booking)
     db.commit()
+
+
+def get_bookings_summary(db: Session) -> dict:
+    """
+    Return aggregate counts of bookings by status.
+    """
+    total = db.query(func.count(Booking.id)).scalar() or 0
+    confirmed = (
+        db.query(func.count(Booking.id)).filter(Booking.status == "confirmed").scalar() or 0
+    )
+    cancelled = (
+        db.query(func.count(Booking.id)).filter(Booking.status == "cancelled").scalar() or 0
+    )
+    return {
+        "total_bookings": total,
+        "confirmed_bookings": confirmed,
+        "cancelled_bookings": cancelled,
+    }
+
+
+def get_bookings_by_room(db: Session) -> List[dict]:
+    """
+    Return counts of bookings grouped by room and status.
+    """
+    rows = (
+        db.query(
+            Booking.room_id,
+            func.count(Booking.id).label("total"),
+            func.sum(case((Booking.status == "confirmed", 1), else_=0)).label("confirmed"),
+            func.sum(case((Booking.status == "cancelled", 1), else_=0)).label("cancelled"),
+        )
+        .group_by(Booking.room_id)
+        .all()
+    )
+    results: List[dict] = []
+    for row in rows:
+        results.append(
+            {
+                "room_id": row.room_id,
+                "total": int(row.total or 0),
+                "confirmed": int(row.confirmed or 0),
+                "cancelled": int(row.cancelled or 0),
+            }
+        )
+    return results

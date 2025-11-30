@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from typing import Generator
 
-from fastapi import Depends
+from fastapi import Depends, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
 from sqlalchemy import create_engine
@@ -29,6 +29,7 @@ from common.rbac import (
     has_role,
 )
 from common.exceptions import UnauthorizedError, ForbiddenError
+from common.rate_limiter import check_rate_limit
 
 # ---------------------------------------------------------------------------
 # Database session factory
@@ -159,3 +160,9 @@ def allow_owner_or_admin_or_moderator(
     if has_role(current.role, [ROLE_ADMIN, ROLE_MODERATOR]):
         return
     raise ForbiddenError("You are not allowed to modify this review.")
+
+
+def rate_limit_by_user(endpoint: str):
+    def _dep(current_user: CurrentUser = Depends(get_current_user)):
+        check_rate_limit(f"{endpoint}:{current_user.id}")
+    return _dep

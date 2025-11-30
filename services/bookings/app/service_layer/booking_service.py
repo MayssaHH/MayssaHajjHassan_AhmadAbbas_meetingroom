@@ -137,6 +137,20 @@ def list_bookings_for_user_room(db: Session, *, user_id: int, room_id: int) -> L
     ]
 
 
+def get_bookings_summary(db: Session) -> dict:
+    """
+    Return aggregated booking counts.
+    """
+    return booking_repository.get_bookings_summary(db)
+
+
+def get_bookings_by_room(db: Session) -> List[dict]:
+    """
+    Return booking counts grouped by room.
+    """
+    return booking_repository.get_bookings_by_room(db)
+
+
 def is_room_available(
     db: Session,
     *,

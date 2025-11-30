@@ -61,3 +61,18 @@ class ConflictError(AppError):
 class InternalServerError(AppError):
     def __init__(self, message: str = "An unexpected error occurred.", *, details: Optional[Dict[str, Any]] = None):
         super().__init__(http_status=500, error_code="INTERNAL_ERROR", message=message, details=details)
+
+
+class CircuitOpenError(AppError):
+    def __init__(self, message: str = "Circuit is open; downstream unavailable.", *, details: Optional[Dict[str, Any]] = None):
+        super().__init__(http_status=503, error_code="CIRCUIT_OPEN", message=message, details=details)
+
+
+class DownstreamServiceError(AppError):
+    def __init__(self, message: str = "Downstream service error.", *, details: Optional[Dict[str, Any]] = None):
+        super().__init__(http_status=502, error_code="DOWNSTREAM_ERROR", message=message, details=details)
+
+
+class RateLimitExceededError(AppError):
+    def __init__(self, message: str = "Rate limit exceeded.", *, details: Optional[Dict[str, Any]] = None):
+        super().__init__(http_status=429, error_code="RATE_LIMIT_EXCEEDED", message=message, details=details)

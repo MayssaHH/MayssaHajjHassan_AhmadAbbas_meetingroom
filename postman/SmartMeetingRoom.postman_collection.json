@@ -1239,6 +1239,140 @@
           ]
         }
       ]
+    },
+    {
+      "name": "Task2 Ahmad",
+      "description": "Task 2: Circuit breaker, rate limiting, and analytics endpoints.",
+      "item": [
+        {
+          "name": "Circuit Breaker - Downstream Failure (expect CIRCUIT_OPEN)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{rooms_base_url}}/rooms/1/status",
+              "host": [
+                "{{rooms_base_url}}"
+              ],
+              "path": [
+                "rooms",
+                "1",
+                "status"
+              ]
+            },
+            "description": "Simulate downstream Bookings failure (stop bookings service) and call Rooms status until circuit opens; expect 503 CIRCUIT_OPEN."
+          },
+          "response": []
+        },
+        {
+          "name": "Rate Limit - Users Login (expect 429)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin1\",\n  \"password\": \"wrong\"\n}"
+            },
+            "url": {
+              "raw": "{{users_base_url}}/users/login",
+              "host": [
+                "{{users_base_url}}"
+              ],
+              "path": [
+                "users",
+                "login"
+              ]
+            },
+            "description": "Call more than rate_limit_max_requests within window to trigger 429 RATE_LIMIT_EXCEEDED."
+          },
+          "response": []
+        },
+        {
+          "name": "Analytics - Bookings Summary",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{bookings_base_url}}/analytics/bookings/summary",
+              "host": [
+                "{{bookings_base_url}}"
+              ],
+              "path": [
+                "analytics",
+                "bookings",
+                "summary"
+              ]
+            },
+            "description": "Aggregated booking counts (total/confirmed/cancelled)."
+          },
+          "response": []
+        },
+        {
+          "name": "Analytics - Bookings By Room",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{bookings_base_url}}/analytics/bookings/by-room",
+              "host": [
+                "{{bookings_base_url}}"
+              ],
+              "path": [
+                "analytics",
+                "bookings",
+                "by-room"
+              ]
+            },
+            "description": "Booking counts grouped by room (total/confirmed/cancelled)."
+          },
+          "response": []
+        },
+        {
+          "name": "Analytics - Reviews Avg Rating By Room",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{reviews_base_url}}/analytics/reviews/average-rating-by-room",
+              "host": [
+                "{{reviews_base_url}}"
+              ],
+              "path": [
+                "analytics",
+                "reviews",
+                "average-rating-by-room"
+              ]
+            },
+            "description": "Average rating and review count per room (admin/mod/fm/auditor)."
+          },
+          "response": []
+        }
+      ]
     }
   ]
 }

@@ -11,7 +11,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from common.exceptions import AppError, InternalServerError, UnauthorizedError, ForbiddenError, NotFoundError, BadRequestError
 from common.logging_utils import get_logger, log_error
-from services.bookings.app.routers import bookings_routes, admin_routes
+from services.bookings.app.routers import bookings_routes, admin_routes, analytics_routes
 
 logger = get_logger(__name__)
 SERVICE_NAME = "bookings"
@@ -70,3 +70,4 @@ def health_check() -> dict:
 
 app.include_router(bookings_routes.router, prefix="/bookings", tags=["bookings"])
 app.include_router(admin_routes.router, prefix="/admin/bookings", tags=["admin-bookings"])
+app.include_router(analytics_routes.router)

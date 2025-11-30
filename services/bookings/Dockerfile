@@ -9,9 +9,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-WORKDIR /app/services/bookings
+ENV PYTHONPATH=/app
 
 EXPOSE 8003
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8003"]
-
+CMD ["uvicorn", "services.bookings.app.main:app", "--host", "0.0.0.0", "--port", "8003"]

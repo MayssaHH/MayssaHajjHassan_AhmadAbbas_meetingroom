@@ -26,6 +26,7 @@ def fetch_user_bookings(user_id: int) -> List[Dict[str, Any]]:
         settings.bookings_service_url,
         timeout=settings.http_client_timeout,
         default_headers={"Authorization": f"Bearer {token}"},
+        service_name="bookings",
     )
     try:
         resp = client.get(f"/admin/bookings/user/{user_id}")

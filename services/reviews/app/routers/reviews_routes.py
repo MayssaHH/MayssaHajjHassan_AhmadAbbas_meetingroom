@@ -19,6 +19,7 @@ from ..dependencies import (
     require_authenticated,
     require_read_access,
     allow_owner_or_admin_or_moderator,
+    rate_limit_by_user,
 )
 from common.rbac import ROLE_AUDITOR
 from common.exceptions import ForbiddenError, NotFoundError, BadRequestError
@@ -36,6 +37,7 @@ def create_review(
     payload: schemas.ReviewCreate,
     db: Session = Depends(get_db),
     current_user: CurrentUser = Depends(require_authenticated),
+    _limit = Depends(rate_limit_by_user("create_review")),
 ):
     """
     Create a new review for a room.

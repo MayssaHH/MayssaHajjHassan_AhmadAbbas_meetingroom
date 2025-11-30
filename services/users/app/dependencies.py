@@ -13,13 +13,14 @@ wired to real implementations in later commits.
 
 from typing import Callable, Generator, List
 
-from fastapi import Depends
+from fastapi import Depends, Request
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
 from common.auth import verify_access_token
 from common.rbac import is_role_allowed, ROLE_SERVICE_ACCOUNT
 from common.exceptions import UnauthorizedError, ForbiddenError
+from common.rate_limiter import check_rate_limit
 from db.init_db import get_db as _get_db
 from db.schema import User
 
@@ -89,6 +90,19 @@ def get_current_user(
     if user is None:
         raise UnauthorizedError("User not found.")
     return user
+
+
+def rate_limit_by_ip(endpoint: str):
+    def _dep(request: Request):
+        ip = request.client.host if request.client else "unknown"
+        check_rate_limit(f"{endpoint}:{ip}")
+    return _dep
+
+
+def rate_limit_by_user(endpoint: str):
+    def _dep(current_user: User = Depends(get_current_user)):
+        check_rate_limit(f"{endpoint}:{current_user.id}")
+    return _dep
 
 
 def require_roles(allowed_roles: List[str]) -> Callable[[User], User]:

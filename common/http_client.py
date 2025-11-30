@@ -14,9 +14,13 @@ from __future__ import annotations
 
 from typing import Any, Dict, Optional
 import time
-from httpx import TimeoutException, HTTPError
+from httpx import TimeoutException, HTTPError, Response
 
 import httpx
+
+from common.config import get_settings
+from common.circuit_breaker import get_breaker
+from common.exceptions import DownstreamServiceError, CircuitOpenError
 
 
 class ServiceHTTPClient:
@@ -39,10 +43,12 @@ class ServiceHTTPClient:
         base_url: str,
         timeout: float = 5.0,
         default_headers: Optional[Dict[str, str]] = None,
+        service_name: Optional[str] = None,
     ) -> None:
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
         self.default_headers: Dict[str, str] = default_headers or {}
+        self.service_name = service_name or "downstream"
 
     def _build_client(self) -> httpx.Client:
         """
@@ -58,8 +64,6 @@ class ServiceHTTPClient:
         """
         Execute a request with basic retry/backoff on network errors.
         """
-        from common.config import get_settings  # local import to avoid cycles
-
         settings = get_settings()
         retries = max(settings.http_client_retries, 0)
         attempt = 0
@@ -69,7 +73,17 @@ class ServiceHTTPClient:
         while attempt <= retries:
             try:
                 with self._build_client() as client:
-                    return client.request(method, path, headers=headers, **kwargs)
+                    breaker = get_breaker(self.service_name)
+                    if settings.cb_enabled:
+                        breaker.before_call()
+                    resp: Response = client.request(method, path, headers=headers, **kwargs)
+                    if resp.status_code >= 500:
+                        if settings.cb_enabled:
+                            breaker.record_failure()
+                        resp.raise_for_status()
+                    if settings.cb_enabled:
+                        breaker.record_success()
+                    return resp
             except (TimeoutException, HTTPError) as exc:
                 last_exc = exc
                 attempt += 1
@@ -78,7 +92,13 @@ class ServiceHTTPClient:
                 time.sleep(backoff)
                 backoff *= 2
         if last_exc:
-            raise last_exc
+            if isinstance(last_exc, CircuitOpenError):
+                raise last_exc
+            # On repeated failure, open circuit.
+            if get_settings().cb_enabled:
+                breaker = get_breaker(self.service_name)
+                breaker.record_failure()
+            raise DownstreamServiceError(str(last_exc))
         raise RuntimeError("HTTP request failed without exception")  # pragma: no cover
 
     def get(self, path: str, headers: Optional[Dict[str, str]] = None, **kwargs: Any) -> httpx.Response:

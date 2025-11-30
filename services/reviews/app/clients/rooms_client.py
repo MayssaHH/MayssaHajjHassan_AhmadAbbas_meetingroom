@@ -26,6 +26,7 @@ def ensure_room_is_active(room_id: int) -> bool:
         settings.rooms_service_url,
         timeout=settings.http_client_timeout,
         default_headers={"Authorization": f"Bearer {token}"},
+        service_name="rooms",
     )
     try:
         resp = client.get(f"/rooms/{room_id}")

@@ -14,7 +14,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from common.exceptions import AppError, InternalServerError, UnauthorizedError, ForbiddenError, NotFoundError, BadRequestError
 from common.logging_utils import get_logger, log_error
-from .routers import reviews_routes, moderation_routes, admin_routes
+from .routers import reviews_routes, moderation_routes, admin_routes, analytics_routes
 
 logger = get_logger(__name__)
 SERVICE_NAME = "reviews"
@@ -61,6 +61,7 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
 app.include_router(reviews_routes.router)
 app.include_router(moderation_routes.router)
 app.include_router(admin_routes.router, prefix="/admin", tags=["admin-reviews"])
+app.include_router(analytics_routes.router)
 
 
 @app.get("/health", tags=["health"])

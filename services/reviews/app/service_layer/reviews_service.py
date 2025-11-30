@@ -153,6 +153,13 @@ def list_all_reviews(db: Session) -> List[Review]:
     return reviews_repository.list_all_reviews(db)
 
 
+def get_average_rating_by_room(db: Session) -> List[dict]:
+    """
+    Return average rating and count grouped by room.
+    """
+    return reviews_repository.get_average_rating_by_room(db)
+
+
 def flag_review(db: Session, review: Review) -> Review:
     """
     Mark the given review as flagged.
@@ -192,6 +199,7 @@ __all__ = [
     "list_reviews_for_room",
     "list_flagged_reviews",
     "list_all_reviews",
+    "get_average_rating_by_room",
     "flag_review",
     "unflag_review",
     "hide_review",

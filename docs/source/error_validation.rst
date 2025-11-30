@@ -52,6 +52,14 @@ Error Types
      - 500
      - INTERNAL_ERROR
      - Catch-all unexpected server errors.
+   * - CircuitOpenError
+     - 503
+     - CIRCUIT_OPEN
+     - Circuit breaker is open; downstream calls short-circuited.
+   * - RateLimitExceededError
+     - 429
+     - RATE_LIMIT_EXCEEDED
+     - Request rate exceeded configured limits.
 
 Validation by Service
 ---------------------

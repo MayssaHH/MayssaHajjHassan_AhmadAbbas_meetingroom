@@ -16,7 +16,7 @@ from sqlalchemy.orm import Session
 
 from db.init_db import get_db
 from services.bookings.app import schemas
-from services.bookings.app.dependencies import get_current_user, CurrentUser
+from services.bookings.app.dependencies import get_current_user, CurrentUser, rate_limit_by_user
 from services.bookings.app.service_layer import booking_service
 
 
@@ -32,6 +32,7 @@ def create_booking(
     payload: schemas.BookingCreate,
     db: Session = Depends(get_db),
     current_user: CurrentUser = Depends(get_current_user),
+    _limit = Depends(rate_limit_by_user("create_booking")),
 ):
     """
     Create a new booking for the current user.
