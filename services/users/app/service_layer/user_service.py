@@ -101,8 +101,15 @@ def register_user(
     BadRequestError
         If the username or email is already taken, or if password validation fails.
     """
-    validate_password_strength(password)
-    normalized_role = normalize_role(role)
+    try:
+        validate_password_strength(password)
+    except ValueError as e:
+        raise BadRequestError(str(e), error_code="INVALID_PASSWORD") from e
+    
+    try:
+        normalized_role = normalize_role(role)
+    except ValueError as e:
+        raise BadRequestError(str(e), error_code="INVALID_ROLE") from e
 
     if user_repository.get_user_by_username(db, username=username):
         raise BadRequestError("Username is already taken.", error_code="USER_ALREADY_EXISTS")

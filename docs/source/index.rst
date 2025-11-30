@@ -9,14 +9,15 @@ and their APIs.
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: Documentation:
 
    architecture
    deployment_docker
+   error_validation
 
 .. toctree::
    :maxdepth: 2
-   :caption: Services
+   :caption: Services:
 
    users_service
    rooms_service

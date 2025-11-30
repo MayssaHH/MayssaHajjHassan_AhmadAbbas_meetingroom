@@ -113,7 +113,7 @@ async def generic_exception_handler(request: Request, exc: Exception) -> JSONRes
 # API v1 router
 api_v1 = APIRouter(prefix="/api/v1")
 
-api_v1.include_router(rooms_routes.router, prefix="/rooms", tags=["rooms"])
+api_v1.include_router(rooms_routes.router, tags=["rooms"])
 
 app.include_router(api_v1)
 

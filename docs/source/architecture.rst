@@ -21,40 +21,12 @@ All services share a common relational database schema (implemented in
 ``db.schema``) and communicate with each other over HTTP using
 well-defined APIs and a dedicated ``service_account`` user.
 
-Users service
--------------
+For detailed documentation on each service, see the individual service pages:
 
-The Users service is responsible for managing user accounts, authentication, and roles.
-It provides endpoints for user registration, login, profile management, and role assignment.
-It is called by clients directly and relies on shared authentication and RBAC logic to
-enforce permissions for regular users, moderators, and admins.
-
-Rooms Service
--------------
-
-The Rooms service is responsible for storing and exposing meeting room metadata,
-including capacity, equipment, and location. It provides filtered search for
-rooms and a status endpoint that can be combined with booking information from
-the Bookings service to determine availability.
-
-Bookings service
-----------------
-
-The Bookings service is responsible for managing time-based reservations of rooms.
-It owns the lifecycle of a booking:
-creation
-update (change time window or room)
-cancellation by the booking owner
-force-cancellation / conflict resolution by admins
-
-Reviews service
----------------
-
-The Reviews microservice is responsible for user feedback about rooms.
-It stores ratings and comments, validates and sanitizes user input, and exposes
-moderation endpoints for flagging, hiding, and restoring reviews. It is called
-by clients directly and relies on shared authentication and RBAC logic to
-enforce permissions for regular users, moderators, and admins.
+* :doc:`users_service` - User accounts, authentication, and roles
+* :doc:`rooms_service` - Room inventory and metadata
+* :doc:`bookings_service` - Time-based room reservations
+* :doc:`reviews_service` - User feedback and moderation
 
 API Versioning
 --------------

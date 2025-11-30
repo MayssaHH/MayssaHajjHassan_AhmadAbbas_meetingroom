@@ -82,9 +82,8 @@ class Settings(BaseSettings):
 
     # Notification settings
     notifications_enabled: bool = False
-    sendgrid_api_key: Optional[str] = None
-    sendgrid_from_email: Optional[str] = None
-    notifications_provider: str = "sendgrid"  # Options: "sendgrid" or "mock"
+    sendgrid_api_key: str | None = None
+    sendgrid_from_email: str | None = None
 
     class Config:
         """

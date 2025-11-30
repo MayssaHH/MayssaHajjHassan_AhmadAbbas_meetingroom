@@ -71,7 +71,7 @@ services:
       - JWT_SECRET_KEY=some_long_secret_here
       - NOTIFICATIONS_ENABLED=${NOTIFICATIONS_ENABLED:-true}
       - SENDGRID_API_KEY=${SENDGRID_API_KEY:-}
-      - SENDGRID_FROM_EMAIL=${SENDGRID_FROM_EMAIL:-noreply@example.com}
+      - SENDGRID_FROM_EMAIL=${SENDGRID_FROM_EMAIL:-mayssahajj03@gmail.com}
     depends_on:
       db:
         condition: service_healthy
