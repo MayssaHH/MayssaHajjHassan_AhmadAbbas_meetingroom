@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>System Architecture &#8212; Smart Meeting Room Backend Documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="_static/basic.css?v=686e5160" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=27fed22d" />
+    <script src="_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Deployment &amp; Docker Setup" href="deployment_docker.html" />
+    <link rel="prev" title="Smart Meeting Room Backend" href="index.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="system-architecture">
+<h1>System Architecture<a class="headerlink" href="#system-architecture" title="Link to this heading">¶</a></h1>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This page is a placeholder created in Commit 2. It will be expanded
+in later commits with diagrams and detailed explanations.</p>
+</div>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading">¶</a></h2>
+<p>The Smart Meeting Room backend is designed as a small microservice
+ecosystem built around four main services:</p>
+<ul class="simple">
+<li><p><strong>Users service</strong> – manages accounts, authentication, and roles.</p></li>
+<li><p><strong>Rooms service</strong> – manages room inventory and static room data.</p></li>
+<li><p><strong>Bookings service</strong> – manages time-based reservations of rooms.</p></li>
+<li><p><strong>Reviews service</strong> – manages user feedback and moderation.</p></li>
+</ul>
+<p>All services share a common relational database schema (implemented in
+<code class="docutils literal notranslate"><span class="pre">db.schema</span></code>) and communicate with each other over HTTP using
+well-defined APIs and a dedicated <code class="docutils literal notranslate"><span class="pre">service_account</span></code> user.</p>
+</section>
+<section id="users-service">
+<h2>Users service<a class="headerlink" href="#users-service" title="Link to this heading">¶</a></h2>
+<p>The Users service is responsible for managing user accounts, authentication, and roles.
+It provides endpoints for user registration, login, profile management, and role assignment.
+It is called by clients directly and relies on shared authentication and RBAC logic to
+enforce permissions for regular users, moderators, and admins.</p>
+</section>
+<section id="rooms-service">
+<h2>Rooms Service<a class="headerlink" href="#rooms-service" title="Link to this heading">¶</a></h2>
+<p>The Rooms service is responsible for storing and exposing meeting room metadata,
+including capacity, equipment, and location. It provides filtered search for
+rooms and a status endpoint that can be combined with booking information from
+the Bookings service to determine availability.</p>
+</section>
+<section id="bookings-service">
+<h2>Bookings service<a class="headerlink" href="#bookings-service" title="Link to this heading">¶</a></h2>
+<p>The Bookings service is responsible for managing time-based reservations of rooms.
+It owns the lifecycle of a booking:
+creation
+update (change time window or room)
+cancellation by the booking owner
+force-cancellation / conflict resolution by admins</p>
+</section>
+<section id="reviews-service">
+<h2>Reviews service<a class="headerlink" href="#reviews-service" title="Link to this heading">¶</a></h2>
+<p>The Reviews microservice is responsible for user feedback about rooms.
+It stores ratings and comments, validates and sanitizes user input, and exposes
+moderation endpoints for flagging, hiding, and restoring reviews. It is called
+by clients directly and relies on shared authentication and RBAC logic to
+enforce permissions for regular users, moderators, and admins.</p>
+</section>
+<section id="api-versioning">
+<h2>API Versioning<a class="headerlink" href="#api-versioning" title="Link to this heading">¶</a></h2>
+<p>All business endpoints are versioned under the <code class="docutils literal notranslate"><span class="pre">/api/v1/</span></code> prefix:</p>
+<ul class="simple">
+<li><p><strong>Users service</strong>: <code class="docutils literal notranslate"><span class="pre">/api/v1/users/*</span></code></p></li>
+<li><p><strong>Rooms service</strong>: <code class="docutils literal notranslate"><span class="pre">/api/v1/rooms/*</span></code></p></li>
+<li><p><strong>Bookings service</strong>: <code class="docutils literal notranslate"><span class="pre">/api/v1/bookings/*</span></code>, <code class="docutils literal notranslate"><span class="pre">/api/v1/admin/bookings/*</span></code></p></li>
+<li><p><strong>Reviews service</strong>: <code class="docutils literal notranslate"><span class="pre">/api/v1/reviews/*</span></code>, <code class="docutils literal notranslate"><span class="pre">/api/v1/admin/reviews/*</span></code></p></li>
+</ul>
+<p>Health check endpoints remain unversioned and are accessible at the root level:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">GET</span> <span class="pre">/health</span></code> - Returns service health status</p></li>
+</ul>
+<p>Future breaking changes will be introduced under <code class="docutils literal notranslate"><span class="pre">/api/v2/</span></code>, allowing clients
+to migrate gradually while maintaining backward compatibility with v1 endpoints.</p>
+</section>
+<section id="deployment-view">
+<h2>Deployment View<a class="headerlink" href="#deployment-view" title="Link to this heading">¶</a></h2>
+<p>The system is deployed as five Docker containers (database + four services).
+For details on ports, container names, and how to run the stack, see
+<a class="reference internal" href="deployment_docker.html"><span class="doc">Deployment &amp; Docker Setup</span></a>.</p>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">Smart Meeting Room Backend</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">System Architecture</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#users-service">Users service</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#rooms-service">Rooms Service</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#bookings-service">Bookings service</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#reviews-service">Reviews service</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#api-versioning">API Versioning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#deployment-view">Deployment View</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="deployment_docker.html">Deployment &amp; Docker Setup</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Services</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="users_service.html">Users Service</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rooms_service.html">Rooms Service</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bookings_service.html">Bookings Service</a></li>
+<li class="toctree-l1"><a class="reference internal" href="reviews_service.html">Reviews Service</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="index.html" title="previous chapter">Smart Meeting Room Backend</a></li>
+      <li>Next: <a href="deployment_docker.html" title="next chapter">Deployment &amp; Docker Setup</a></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2025, Mayssa Hajj Hassan & Ahmad Abbas.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.1.3</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="_sources/architecture.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Error Handling and Validation &#8212; Smart Meeting Room Backend Documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="_static/basic.css?v=686e5160" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=27fed22d" />
+    <script src="_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="error-handling-and-validation">
+<h1>Error Handling and Validation<a class="headerlink" href="#error-handling-and-validation" title="Link to this heading">¶</a></h1>
+<section id="standard-error-schema">
+<h2>Standard Error Schema<a class="headerlink" href="#standard-error-schema" title="Link to this heading">¶</a></h2>
+<p>All services return errors using the same JSON structure:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;error_code&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;BOOKING_CONFLICT&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;message&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Room is already booked in this time range.&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;details&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;room_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;start_time&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;...&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;end_time&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;...&quot;</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="error-types">
+<h2>Error Types<a class="headerlink" href="#error-types" title="Link to this heading">¶</a></h2>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Exception</p></th>
+<th class="head"><p>HTTP Status</p></th>
+<th class="head"><p>Default error_code</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>BadRequestError</p></td>
+<td><p>400</p></td>
+<td><p>VALIDATION_ERROR</p></td>
+<td><p>Input validation failures (invalid time ranges, capacity, rating, etc.).</p></td>
+</tr>
+<tr class="row-odd"><td><p>UnauthorizedError</p></td>
+<td><p>401</p></td>
+<td><p>UNAUTHORIZED</p></td>
+<td><p>Missing or invalid credentials.</p></td>
+</tr>
+<tr class="row-even"><td><p>ForbiddenError</p></td>
+<td><p>403</p></td>
+<td><p>FORBIDDEN</p></td>
+<td><p>Authenticated but lacking permissions/role or not the owner.</p></td>
+</tr>
+<tr class="row-odd"><td><p>NotFoundError</p></td>
+<td><p>404</p></td>
+<td><p><a href="#id1"><span class="problematic" id="id2">*</span></a>_NOT_FOUND</p></td>
+<td><p>Requested resource does not exist.</p></td>
+</tr>
+<tr class="row-even"><td><p>ConflictError</p></td>
+<td><p>409</p></td>
+<td><p>BOOKING_CONFLICT</p></td>
+<td><p>State conflicts such as overlapping bookings.</p></td>
+</tr>
+<tr class="row-odd"><td><p>InternalServerError</p></td>
+<td><p>500</p></td>
+<td><p>INTERNAL_ERROR</p></td>
+<td><p>Catch-all unexpected server errors.</p></td>
+</tr>
+<tr class="row-even"><td><p>RateLimitExceededError</p></td>
+<td><p>429</p></td>
+<td><p>RATE_LIMIT_EXCEEDED</p></td>
+<td><p>Request rate exceeded configured limits.</p></td>
+</tr>
+<tr class="row-odd"><td><p>CircuitOpenError</p></td>
+<td><p>503</p></td>
+<td><p>CIRCUIT_OPEN</p></td>
+<td><p>Circuit breaker is open; downstream calls short-circuited.</p></td>
+</tr>
+<tr class="row-even"><td><p>NotificationError</p></td>
+<td><p>502</p></td>
+<td><p>NOTIFICATION_FAILED</p></td>
+<td><p>Notification delivery failed.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="shared-error-hierarchy">
+<h2>Shared Error Hierarchy<a class="headerlink" href="#shared-error-hierarchy" title="Link to this heading">¶</a></h2>
+<p>All services share the same <code class="docutils literal notranslate"><span class="pre">AppError</span></code> hierarchy defined in <code class="docutils literal notranslate"><span class="pre">common.exceptions</span></code>.
+This ensures consistent error handling and response formats across all microservices.
+Each service registers global exception handlers that convert these exceptions into
+the standard JSON error format.</p>
+</section>
+<section id="validation-by-service">
+<h2>Validation by Service<a class="headerlink" href="#validation-by-service" title="Link to this heading">¶</a></h2>
+<section id="users">
+<h3>Users<a class="headerlink" href="#users" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p>Case-insensitive username/email uniqueness.</p></li>
+<li><p>Password strength/lockout.</p></li>
+<li><p>Invalid login → UnauthorizedError (401, INVALID_CREDENTIALS).</p></li>
+</ul>
+</section>
+<section id="rooms">
+<h3>Rooms<a class="headerlink" href="#rooms" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p>capacity &gt; 0 (via schemas), name uniqueness; Room not found → NotFoundError (ROOM_NOT_FOUND).</p></li>
+</ul>
+</section>
+<section id="bookings">
+<h3>Bookings<a class="headerlink" href="#bookings" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p>start_time &lt; end_time with min/max duration, UTC normalized.</p></li>
+<li><p>Room/user existence and room active.</p></li>
+<li><p>Overlapping bookings → ConflictError (BOOKING_CONFLICT).</p></li>
+<li><p>Non-owner updates/cancels → ForbiddenError (NOT_OWNER).</p></li>
+</ul>
+</section>
+<section id="reviews">
+<h3>Reviews<a class="headerlink" href="#reviews" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p>rating in [1..5], comment length + sanitization/profanity check.</p></li>
+<li><p>Non-owner update/delete → ForbiddenError (NOT_OWNER).</p></li>
+<li><p>Review not found → NotFoundError.</p></li>
+</ul>
+</section>
+</section>
+<section id="sanitization">
+<h2>Sanitization<a class="headerlink" href="#sanitization" title="Link to this heading">¶</a></h2>
+<p>The Reviews service sanitizes <code class="docutils literal notranslate"><span class="pre">comment</span></code> by stripping HTML tags and
+collapsing whitespace to reduce the risk of script injection.</p>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">Smart Meeting Room Backend</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="architecture.html">System Architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="deployment_docker.html">Deployment &amp; Docker Setup</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Services</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="users_service.html">Users Service</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rooms_service.html">Rooms Service</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bookings_service.html">Bookings Service</a></li>
+<li class="toctree-l1"><a class="reference internal" href="reviews_service.html">Reviews Service</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2025, Mayssa Hajj Hassan & Ahmad Abbas.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.1.3</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="_sources/error_validation.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

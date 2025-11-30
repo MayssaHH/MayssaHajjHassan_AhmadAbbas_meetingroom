@@ -41,15 +41,21 @@ def create_booking(
     with existing bookings for the same room. If a conflict is detected,
     a 409 response is returned.
     """
-    booking = booking_service.create_booking(
-        db,
-        user_id=current_user.id,
-        role=current_user.role,
-        room_id=payload.room_id,
-        start_time=payload.start_time,
-        end_time=payload.end_time,
-        force_override=False,
-    )
+    try:
+        booking = booking_service.create_booking(
+            db,
+            user_id=current_user.id,
+            role=current_user.role,
+            room_id=payload.room_id,
+            start_time=payload.start_time,
+            end_time=payload.end_time,
+            force_override=False,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        )
 
     return booking
 

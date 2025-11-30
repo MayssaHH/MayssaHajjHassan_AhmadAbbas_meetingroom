@@ -78,7 +78,7 @@ class Settings(BaseSettings):
     cb_half_open_max_calls: int = 1
 
     rate_limit_window_sec: int = 60
-    rate_limit_max_requests: int = 10
+    rate_limit_max_requests: int = 100
 
     # Notification settings
     notifications_enabled: bool = False

@@ -1,0 +1,12 @@
+[run]
+source =
+    common
+    services
+omit =
+    */tests/*
+    */__pycache__/*
+    */.venv/*
+    */venv/*
+
+[report]
+show_missing = True

@@ -12,9 +12,10 @@ from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from pydantic import BaseModel
 
 from common.rbac import ROLE_ADMIN, ROLE_AUDITOR, ROLE_SERVICE_ACCOUNT
-from common.exceptions import BadRequestError, NotFoundError
+from common.exceptions import BadRequestError, NotFoundError, ConflictError
 from db.schema import User
 from services.users.app import schemas
 from services.users.app.service_layer import user_service
@@ -83,12 +84,18 @@ def update_current_user(
     """
     if payload.username is not None:
         if user_repository.get_user_by_username(db, username=payload.username):
-            raise BadRequestError("Username is already taken.", error_code="USER_ALREADY_EXISTS")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Username is already taken.",
+            )
         current_user.username = payload.username
 
     if payload.email is not None:
         if user_repository.get_user_by_email(db, email=payload.email):
-            raise BadRequestError("Email is already in use.", error_code="USER_ALREADY_EXISTS")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email is already in use.",
+            )
         current_user.email = payload.email
 
     if payload.name is not None:
@@ -121,3 +128,35 @@ def change_password(
     """
     user_service.change_password(db, current_user, new_password)
     return None
+
+
+class RoleUpdatePayload(BaseModel):
+    role: schemas.RoleLiteral
+
+
+@router.patch("/{user_id}/role", status_code=status.HTTP_200_OK)
+@router.put("/{user_id}/role", status_code=status.HTTP_200_OK)
+def update_user_role(
+    user_id: int,
+    payload: RoleUpdatePayload,
+    db: Session = Depends(get_db),
+    _: User = Depends(require_roles([ROLE_ADMIN])),
+):
+    """
+    Admin-only role update exposed under /users/{id}/role (non-admins get 403).
+    """
+    user = user_repository.get_user_by_id(db, user_id)
+    if user is None:
+        raise NotFoundError("User not found.", error_code="USER_NOT_FOUND")
+
+    try:
+        normalized_role = user_service.normalize_role(payload.role)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(exc),
+        ) from exc
+
+    user.role = normalized_role
+    user_repository.save_user(db, user)
+    return {"id": user.id, "role": user.role}
