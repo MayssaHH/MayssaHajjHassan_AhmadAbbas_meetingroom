@@ -56,6 +56,23 @@ moderation endpoints for flagging, hiding, and restoring reviews. It is called
 by clients directly and relies on shared authentication and RBAC logic to
 enforce permissions for regular users, moderators, and admins.
 
+API Versioning
+--------------
+
+All business endpoints are versioned under the ``/api/v1/`` prefix:
+
+* **Users service**: ``/api/v1/users/*``
+* **Rooms service**: ``/api/v1/rooms/*``
+* **Bookings service**: ``/api/v1/bookings/*``, ``/api/v1/admin/bookings/*``
+* **Reviews service**: ``/api/v1/reviews/*``, ``/api/v1/admin/reviews/*``
+
+Health check endpoints remain unversioned and are accessible at the root level:
+
+* ``GET /health`` - Returns service health status
+
+Future breaking changes will be introduced under ``/api/v2/``, allowing clients
+to migrate gradually while maintaining backward compatibility with v1 endpoints.
+
 Deployment View
 ---------------
 

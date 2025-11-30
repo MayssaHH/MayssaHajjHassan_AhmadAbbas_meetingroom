@@ -52,14 +52,26 @@ Error Types
      - 500
      - INTERNAL_ERROR
      - Catch-all unexpected server errors.
-   * - CircuitOpenError
-     - 503
-     - CIRCUIT_OPEN
-     - Circuit breaker is open; downstream calls short-circuited.
    * - RateLimitExceededError
      - 429
      - RATE_LIMIT_EXCEEDED
      - Request rate exceeded configured limits.
+   * - CircuitOpenError
+     - 503
+     - CIRCUIT_OPEN
+     - Circuit breaker is open; downstream calls short-circuited.
+   * - NotificationError
+     - 502
+     - NOTIFICATION_FAILED
+     - Notification delivery failed.
+
+Shared Error Hierarchy
+-----------------------
+
+All services share the same ``AppError`` hierarchy defined in ``common.exceptions``.
+This ensures consistent error handling and response formats across all microservices.
+Each service registers global exception handlers that convert these exceptions into
+the standard JSON error format.
 
 Validation by Service
 ---------------------
