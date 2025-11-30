@@ -826,24 +826,16 @@
         "response": []
       },
       {
-        "name": "Admin – Flag/unflag review",
+        "name": "Admin – Flag review",
         "request": {
           "method": "PATCH",
           "header": [
-            {
-              "key": "Content-Type",
-              "value": "application/json"
-            },
             {
               "key": "Authorization",
               "value": "Bearer {{admin_token}}",
               "description": "JWT for an admin or moderator."
             }
           ],
-          "body": {
-            "mode": "raw",
-            "raw": "{\n  \"flagged\": true\n}"
-          },
           "url": {
             "raw": "{{reviews_base_url}}/admin/reviews/{{review_id}}/flag",
             "host": [
@@ -856,31 +848,23 @@
               "flag"
             ]
           },
-          "description": "Flag or unflag a review. Used by moderators/admins to mark reviews that need attention."
+          "description": "Flag a review as potentially inappropriate. Supports both POST and PATCH methods. No request body needed."
         },
         "response": []
       },
       {
-        "name": "Admin – Hide/restore review",
+        "name": "Admin – Unflag review",
         "request": {
           "method": "PATCH",
           "header": [
-            {
-              "key": "Content-Type",
-              "value": "application/json"
-            },
             {
               "key": "Authorization",
               "value": "Bearer {{admin_token}}",
               "description": "JWT for an admin or moderator."
             }
           ],
-          "body": {
-            "mode": "raw",
-            "raw": "{\n  \"hidden\": true\n}"
-          },
           "url": {
-            "raw": "{{reviews_base_url}}/admin/reviews/{{review_id}}/visibility",
+            "raw": "{{reviews_base_url}}/admin/reviews/{{review_id}}/unflag",
             "host": [
               "{{reviews_base_url}}"
             ],
@@ -888,10 +872,64 @@
               "admin",
               "reviews",
               "{{review_id}}",
-              "visibility"
+              "unflag"
             ]
           },
-          "description": "Hide or restore a review from public listings."
+          "description": "Clear the flagged state from a review. Supports both POST and PATCH methods. No request body needed."
+        },
+        "response": []
+      },
+      {
+        "name": "Admin – Hide review",
+        "request": {
+          "method": "PATCH",
+          "header": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{admin_token}}",
+              "description": "JWT for an admin or moderator."
+            }
+          ],
+          "url": {
+            "raw": "{{reviews_base_url}}/admin/reviews/{{review_id}}/hide",
+            "host": [
+              "{{reviews_base_url}}"
+            ],
+            "path": [
+              "admin",
+              "reviews",
+              "{{review_id}}",
+              "hide"
+            ]
+          },
+          "description": "Hide a review from public view. Supports both POST and PATCH methods. No request body needed."
+        },
+        "response": []
+      },
+      {
+        "name": "Admin – Show review",
+        "request": {
+          "method": "PATCH",
+          "header": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{admin_token}}",
+              "description": "JWT for an admin or moderator."
+            }
+          ],
+          "url": {
+            "raw": "{{reviews_base_url}}/admin/reviews/{{review_id}}/show",
+            "host": [
+              "{{reviews_base_url}}"
+            ],
+            "path": [
+              "admin",
+              "reviews",
+              "{{review_id}}",
+              "show"
+            ]
+          },
+          "description": "Make a hidden review visible again. Supports both POST and PATCH methods. No request body needed."
         },
         "response": []
       }
