@@ -69,6 +69,9 @@ services:
       - BOOKINGS_SERVICE_URL=http://bookings-service:8003
       - REVIEWS_SERVICE_URL=http://reviews-service:8004
       - JWT_SECRET_KEY=some_long_secret_here
+      - NOTIFICATIONS_ENABLED=${NOTIFICATIONS_ENABLED:-true}
+      - SENDGRID_API_KEY=${SENDGRID_API_KEY:-}
+      - SENDGRID_FROM_EMAIL=${SENDGRID_FROM_EMAIL:-noreply@example.com}
     depends_on:
       db:
         condition: service_healthy
