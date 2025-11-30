@@ -11,6 +11,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the entire project into the image.
 COPY . .
 
+# Set PYTHONPATH to include /app so imports work correctly
+ENV PYTHONPATH=/app
+
 EXPOSE 8004
 
 CMD ["uvicorn", "services.reviews.app.main:app", "--host", "0.0.0.0", "--port", "8004"]
