@@ -6,6 +6,7 @@ This module exposes the FastAPI application instance for the Users service.
 
 from fastapi import FastAPI
 
+from common.error_handlers import register_error_handlers
 from services.users.app.routers import auth_routes, users_routes, admin_routes
 
 
@@ -17,6 +18,9 @@ app = FastAPI(
     ),
     version="0.1.0",
 )
+
+# Register unified error handlers
+register_error_handlers(app)
 
 
 @app.get("/health", tags=["health"])
