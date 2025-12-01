@@ -11,8 +11,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the entire project into the image.
 COPY . .
 
+# Set PYTHONPATH to include /app so imports work correctly
 ENV PYTHONPATH=/app
 
 EXPOSE 8003
 
+# Note: use full module path so /app is on sys.path and common/ is importable
 CMD ["uvicorn", "services.bookings.app.main:app", "--host", "0.0.0.0", "--port", "8003"]
